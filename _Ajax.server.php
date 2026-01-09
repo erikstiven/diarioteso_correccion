@@ -2709,7 +2709,8 @@ function elimina_detalle_dir($id = null, $idempresa, $idsucursal, $id_di = '', $
 		$oReturn->alert('No existe información de Diario en la sesión.');
 		return $oReturn;
 	}
-	if ($id_ret >= 0 && (!isset($_SESSION['aDataGirdRet']) || !is_array($_SESSION['aDataGirdRet']))) {
+	if ($id_ret !== '' && is_numeric($id_ret) && $id_ret >= 0
+		&& (!isset($_SESSION['aDataGirdRet']) || !is_array($_SESSION['aDataGirdRet']))) {
 		$oReturn->alert('No existe información de Retención en la sesión.');
 		return $oReturn;
 	}
@@ -2717,18 +2718,19 @@ function elimina_detalle_dir($id = null, $idempresa, $idsucursal, $id_di = '', $
 	$aDataGrid = $_SESSION['aDataGirdDir'];
 	$contador  = count($aDataGrid);
 	//$oReturn->alert('DIR '.$contador);
-	if ($id !== null && $id >= 0) {
+	if ($id !== null && is_numeric($id) && $id >= 0) {
 		if (!array_key_exists($id, $aDataGrid)) {
 			$oReturn->alert('El índice del Directorio no coincide con la sesión actual.');
 			return $oReturn;
 		}
-		if ($id_di !== '' && $id_di >= 0 && isset($aDataGrid[$id]['DI']) && $aDataGrid[$id]['DI'] != $id_di) {
+		if ($id_di !== '' && is_numeric($id_di) && $id_di >= 0
+			&& isset($aDataGrid[$id]['DI']) && $aDataGrid[$id]['DI'] != $id_di) {
 			$oReturn->alert('El índice del Diario no corresponde con el registro de Directorio.');
 			return $oReturn;
 		}
 	}
 	if ($contador > 1) {
-		if ($id !== null && $id >= 0) {
+		if ($id !== null && is_numeric($id) && $id >= 0) {
 			unset($aDataGrid[$id]);
 		}
 		$aDataGrid = array_values($aDataGrid);
@@ -2781,14 +2783,14 @@ function elimina_detalle_dir($id = null, $idempresa, $idsucursal, $id_di = '', $
 	$contador   = count($aDataGrid);
 	//$oReturn->alert('DI '.$contador);
 	unset($aDatos);
-	if ($id_di !== '' && $id_di >= 0) {
+	if ($id_di !== '' && is_numeric($id_di) && $id_di >= 0) {
 		if (!array_key_exists($id_di, $aDataGrid)) {
 			$oReturn->alert('El índice del Diario no coincide con la sesión actual.');
 			return $oReturn;
 		}
 	}
 	if ($contador > 1) {
-		if ($id_di !== '' && $id_di >= 0) {
+		if ($id_di !== '' && is_numeric($id_di) && $id_di >= 0) {
 			unset($aDataGrid[$id_di]);
 		}
 		$aDataGrid = array_values($aDataGrid);
@@ -2826,7 +2828,7 @@ function elimina_detalle_dir($id = null, $idempresa, $idsucursal, $id_di = '', $
 
 
 	// RETENCION
-	if ($id_ret >= 0) {
+	if ($id_ret !== '' && is_numeric($id_ret) && $id_ret >= 0) {
 		unset($aLabelGrid);
 		$aLabelGrid = array(
 			'Fila', 			'Cta Ret', 				'Cliente', 			'Factura', 			'Ret Cliente', 				'Porc(%)', 				'Base Impo',
@@ -2840,12 +2842,13 @@ function elimina_detalle_dir($id = null, $idempresa, $idsucursal, $id_di = '', $
 		$contador   = count($aDataGrid);
 		//$oReturn->alert('ret '.$contador);
 		unset($aDatos);
-		if ($id_ret >= 0) {
+		if ($id_ret !== '' && is_numeric($id_ret) && $id_ret >= 0) {
 			if (!array_key_exists($id_ret, $aDataGrid)) {
 				$oReturn->alert('El índice de Retención no coincide con la sesión actual.');
 				return $oReturn;
 			}
-			if ($id_di !== '' && $id_di >= 0 && isset($aDataGrid[$id_ret]['DI']) && $aDataGrid[$id_ret]['DI'] != $id_di) {
+			if ($id_di !== '' && is_numeric($id_di) && $id_di >= 0
+				&& isset($aDataGrid[$id_ret]['DI']) && $aDataGrid[$id_ret]['DI'] != $id_di) {
 				$oReturn->alert('El índice del Diario no corresponde con el registro de Retención.');
 				return $oReturn;
 			}
@@ -4015,12 +4018,13 @@ function elimina_detalle_ret($id = null, $idempresa, $idsucursal, $id_di)
 	$aDataGrid = $_SESSION['aDataGirdRet'];
 
 	$contador = count($aDataGrid);
-	if ($id !== null && $id >= 0) {
+	if ($id !== null && is_numeric($id) && $id >= 0) {
 		if (!array_key_exists($id, $aDataGrid)) {
 			$oReturn->alert('El índice de Retención no coincide con la sesión actual.');
 			return $oReturn;
 		}
-		if ($id_di !== '' && $id_di >= 0 && isset($aDataGrid[$id]['DI']) && $aDataGrid[$id]['DI'] != $id_di) {
+		if ($id_di !== '' && is_numeric($id_di) && $id_di >= 0
+			&& isset($aDataGrid[$id]['DI']) && $aDataGrid[$id]['DI'] != $id_di) {
 			$oReturn->alert('El índice del Diario no corresponde con el registro de Retención.');
 			return $oReturn;
 		}
@@ -4074,7 +4078,7 @@ function elimina_detalle_ret($id = null, $idempresa, $idsucursal, $id_di)
 	$aDataGrid  = $_SESSION['aDataGirdDiar'];
 	$contador   = count($aDataGrid);
 	unset($aDatos);
-	if ($id_di !== '' && $id_di >= 0) {
+	if ($id_di !== '' && is_numeric($id_di) && $id_di >= 0) {
 		if (!array_key_exists($id_di, $aDataGrid)) {
 			$oReturn->alert('El índice del Diario no coincide con la sesión actual.');
 			return $oReturn;
