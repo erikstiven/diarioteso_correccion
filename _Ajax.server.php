@@ -79,9 +79,6 @@ function agrega_modifica_grid_dir_cheq($nTipo = 0, $aForm = '', $total_cheque = 
 	$oIfx->DSN = $DSN_Ifx;
 	$oIfx->Conectar();
 
-	$aDataGrid = session_grid_get('aDataGirdDir', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
-	$aDataDiar = session_grid_get('aDataGirdDiar', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
-
 	$aLabelGrid = array(
 		'Id', 'Cliente', 'SubCliente', 'Tipo', 'Factura', 'Fec. Vence', 'Detalle', 'Cotizacion',
 		'Debito Moneda Local', 'Credito Moneda Local',
@@ -110,6 +107,8 @@ function agrega_modifica_grid_dir_cheq($nTipo = 0, $aForm = '', $total_cheque = 
 	if (empty($mone_cod)) {
 		$mone_cod = $aForm["moneda"];
 	}
+	$aDataGrid = session_grid_get('aDataGirdDir', $idempresa, $idsucursal);
+	$aDataDiar = session_grid_get('aDataGirdDiar', $idempresa, $idsucursal);
 
 	$sql      = "select pcon_mon_base from saepcon where pcon_cod_empr = $idempresa ";
 	$mone_base = consulta_string_func($sql, 'pcon_mon_base', $oIfx, '');
@@ -3968,7 +3967,7 @@ function mostrar_grid_ret($idempresa, $idsucursal)
 				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . number_format(round($aVal, 2), 2, '.', ',') . '</div>';
 			} elseif ($aux == 15) {		// credito exy
 				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . number_format(round($aVal, 2), 2, '.', ',') . '</div>';
-			} elseif ($aux == 16) {
+			} elseif ($aux == 17) {
 				if ($id_di === null && isset($aValues[$aLabelGrid[18]])) {
 					$id_di = $aValues[$aLabelGrid[18]];
 				}
@@ -4025,7 +4024,7 @@ function elimina_detalle_ret($id = null, $idempresa, $idsucursal, $id_di)
 			foreach ($aValues as $aVal) {
 				if ($aux == 0) {
 					$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . ($cont + 1) . '</div>';
-				} elseif ($aux == 16) {
+				} elseif ($aux == 17) {
 					$id_di_ret = isset($aValues[$aLabelGrid[18]]) ? $aValues[$aLabelGrid[18]] : $id_di_ret;
 					$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="center">
 																			<img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/pencil.png"
