@@ -3638,6 +3638,18 @@ function mostrar_grid_dia($idempresa, $idsucursal)
                                                                 alt="Modificar"
                                                                 align="bottom" />
                                                             </div>';
+			} elseif ($aux == 11) {
+				$row_id = isset($aValues[$aLabelGrid[0]]) ? $aValues[$aLabelGrid[0]] : $cont;
+				$dir_id = isset($aValues[$aLabelGrid[14]]) && $aValues[$aLabelGrid[14]] !== '' ? $aValues[$aLabelGrid[14]] : -1;
+				$ret_id = isset($aValues[$aLabelGrid[15]]) && $aValues[$aLabelGrid[15]] !== '' ? $aValues[$aLabelGrid[15]] : -1;
+				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="center">
+                                                                <img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/delete_1.png"
+                                                                title = "Presione aqui para Eliminar"
+                                                                style="cursor: hand !important; cursor: pointer !important;"
+                                                                onclick="javascript:xajax_elimina_detalle_dir(' . $dir_id . ', ' . $idempresa . ', ' . $idsucursal . ', ' . $row_id . ', ' . $ret_id . ');"
+                                                                alt="Eliminar"
+                                                                align="bottom" />
+                                                            </div>';
 			} elseif ($aux == 12) {
 				// CENTRO COSTO 
 				$sql = "select ccosn_cod_ccosn, ( ccosn_nom_ccosn || ' - ' || ccosn_cod_ccosn ) as  ccosn_nom_ccosn from saeccosn where
