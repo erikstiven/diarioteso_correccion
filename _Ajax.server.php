@@ -2684,14 +2684,17 @@ function elimina_detalle_dir($id = null, $idempresa, $idsucursal, $id_di = '', $
 		'Debito Moneda Ext', 'Credito Moneda Ext', 'Modificar', 'Eliminar', 'DI'
 	);
 
-	unset($aDataGrid);
-	$contador  = 0;
+	$aLabelDiar = array(
+		'Fila', 			 'Cuenta', 				'Nombre', 		'Documento', 		'Cotizacion',
+		'Debito Moneda Local', 		'Credito Moneda Local',
+		'Debito Moneda Ext', 'Credito Moneda Ext', 	'Detalle',		'Modificar',
+		'Eliminar',				'Centro Costo',   			'Centro Actividad',
+		'DIR', 	             'RET'
+	);
 
-	if ($id_ret !== '' && is_numeric($id_ret) && $id_ret >= 0
-		&& (!isset($_SESSION['aDataGirdRet']) || !is_array($_SESSION['aDataGirdRet']))) {
-		$oReturn->alert('No existe información de Retención en la sesión.');
-		return $oReturn;
-	}
+	$deletedDirIndex = null;
+	$deletedDiIndex = null;
+	$deletedRetIndex = null;
 
 	if ($id !== null && is_numeric($id) && $id >= 0) {
 		if (!isset($_SESSION['aDataGirdDir']) || !is_array($_SESSION['aDataGirdDir'])) {
@@ -2700,182 +2703,196 @@ function elimina_detalle_dir($id = null, $idempresa, $idsucursal, $id_di = '', $
 		}
 
 		$aDataGrid = $_SESSION['aDataGirdDir'];
-		$contador  = count($aDataGrid);
-		//$oReturn->alert('DIR '.$contador);
 		if (!array_key_exists($id, $aDataGrid)) {
 			$oReturn->alert('El índice del Directorio no coincide con la sesión actual.');
 			return $oReturn;
 		}
-		if ($id_di !== '' && is_numeric($id_di) && $id_di >= 0
-			&& isset($aDataGrid[$id]['DI']) && $aDataGrid[$id]['DI'] != $id_di) {
-			$oReturn->alert('El índice del Diario no corresponde con el registro de Directorio.');
-			return $oReturn;
-		}
-		if ($contador > 1) {
-			unset($aDataGrid[$id]);
-			$aDataGrid = array_values($aDataGrid);
-			$cont 	   = 0;
 
-			foreach ($aDataGrid as $aValues) {
-				$aux     = 0;
-				foreach ($aValues as $aVal) {
-					if ($aux == 0) {
-						$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . ($cont + 1) . '</div>';
-					} elseif ($aux == 12) {
-						$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="center">
-																				<img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/pencil.png"
-																				title = "Presione aqui para Eliminar"
-																				style="cursor: hand !important; cursor: pointer !important;"
-																				onclick="javascript:xajax_elimina_detalle_dir(' . $cont . ');"
-																				alt="Eliminar"
-																				align="bottom" />
-																			</div>';
-					} else
-						$aDatos[$cont][$aLabelGrid[$aux]] = $aVal;
-					$aux++;
-				}
-				$cont++;
+		$deletedDirIndex = $id;
+		if (isset($aDataGrid[$id]['DI']) && is_numeric($aDataGrid[$id]['DI'])) {
+			$deletedDiIndex = (int)$aDataGrid[$id]['DI'];
+		} elseif ($id_di !== '' && is_numeric($id_di)) {
+			$deletedDiIndex = (int)$id_di;
+		}
+
+		unset($aDataGrid[$id]);
+		$aDataGrid = array_values($aDataGrid);
+
+		foreach ($aDataGrid as $idx => $row) {
+			if (isset($row['DI']) && is_numeric($row['DI']) && $deletedDiIndex !== null && $row['DI'] > $deletedDiIndex) {
+				$row['DI'] = $row['DI'] - 1;
 			}
-
-			$_SESSION['aDataGirdDir'] = $aDatos;
-			$sHtml = mostrar_grid_dir($idempresa, $idsucursal);
-			$oReturn->assign("divDir", "innerHTML", $sHtml);
-		} else {
-			unset($aDataGrid[0]);
-			$_SESSION['aDataGirdDir'] = $aDatos;
-			$sHtml = "";
-			$oReturn->assign("divDir", "innerHTML", $sHtml);
+			$aDataGrid[$idx] = $row;
 		}
+
+		$_SESSION['aDataGirdDir'] = $aDataGrid;
+
+		$cont = 0;
+		unset($aDatos);
+		foreach ($aDataGrid as $aValues) {
+			$aux = 0;
+			foreach ($aValues as $aVal) {
+				if ($aux == 0) {
+					$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . ($cont + 1) . '</div>';
+				} elseif ($aux == 12) {
+					$currentDi = isset($aValues['DI']) && is_numeric($aValues['DI']) ? $aValues['DI'] : -1;
+					$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="center">
+																		<img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/pencil.png"
+																		title = "Presione aqui para Eliminar"
+																		style="cursor: hand !important; cursor: pointer !important;"
+																		onclick="javascript:xajax_elimina_detalle_dir(' . $cont . ', ' . $idempresa . ', ' . $idsucursal . ', ' . $currentDi . ', -1);"
+																		alt="Eliminar"
+																		align="bottom" />
+																	</div>';
+				} else {
+					$aDatos[$cont][$aLabelGrid[$aux]] = $aVal;
+				}
+				$aux++;
+			}
+			$cont++;
+		}
+
+		$_SESSION['aDataGirdDir'] = $aDatos;
+		$sHtml = mostrar_grid_dir($idempresa, $idsucursal);
+		$oReturn->assign("divDir", "innerHTML", $sHtml);
 	}
 
+	if ($id_di !== '' && is_numeric($id_di)) {
+		$deletedDiIndex = $deletedDiIndex === null ? (int)$id_di : $deletedDiIndex;
+	}
 
+	if ($id_ret !== '' && is_numeric($id_ret)) {
+		$deletedRetIndex = (int)$id_ret;
+	}
 
-	// DIARIO
-	$aLabelDiar = array(
-		'Fila', 			 'Cuenta', 				'Nombre', 		'Documento', 		'Cotizacion',
-		'Debito Moneda Local', 		'Credito Moneda Local',
-		'Debito Moneda Ext', 'Credito Moneda Ext', 	'Detalle',		'Modificar',
-		'Eliminar',				'Centro Costo',   			'Centro Actividad',
-		'DIR', 	             'RET'
-	);
-	unset($aDataGrid);
-	$contador   = 0;
-	if ($id_di !== '' && is_numeric($id_di) && $id_di >= 0) {
+	if ($deletedDiIndex !== null) {
 		if (!isset($_SESSION['aDataGirdDiar']) || !is_array($_SESSION['aDataGirdDiar'])) {
 			$oReturn->alert('No existe información de Diario en la sesión.');
 			return $oReturn;
 		}
 
-		$aDataGrid  = $_SESSION['aDataGirdDiar'];
-		$contador   = count($aDataGrid);
-		//$oReturn->alert('DI '.$contador);
-		unset($aDatos);
-		if (!array_key_exists($id_di, $aDataGrid)) {
+		$aDataGrid = $_SESSION['aDataGirdDiar'];
+		if (!array_key_exists($deletedDiIndex, $aDataGrid)) {
 			$oReturn->alert('El índice del Diario no coincide con la sesión actual.');
 			return $oReturn;
 		}
 
-		if ($contador > 1) {
-			unset($aDataGrid[$id_di]);
-			$aDataGrid = array_values($aDataGrid);
-			$cont = 0;
-			foreach ($aDataGrid as $aValues) {
-				$aux = 0;
-				foreach ($aValues as $aVal) {
-					if ($aux == 0) {
-						$aDatos[$cont][$aLabelDiar[$aux]] = '<div align="right">' . ($cont + 1) . '</div>';
-					} elseif ($aux == 10) {
-						$aDatos[$cont][$aLabelDiar[$aux]] = '<div align="center">
-	                                                                <img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/pencil.png"
-	                                                                title = "Presione aqui para Eliminar"
-	                                                                style="cursor: hand !important; cursor: pointer !important;"
-	                                                                onclick="javascript:modificar_valor(' . $cont . ', ' . $idempresa . ', ' . $idsucursal . ');"
-	                                                                alt="Eliminar"
-	                                                                align="bottom" />
-	                                                            </div>';
-					} else
-						$aDatos[$cont][$aLabelDiar[$aux]] = $aVal;
-					$aux++;
-				}
-				$cont++;
-			}
+		unset($aDataGrid[$deletedDiIndex]);
+		$aDataGrid = array_values($aDataGrid);
 
-			$_SESSION['aDataGirdDiar'] = $aDatos;
-			$sHtml = mostrar_grid_dia($idempresa, $idsucursal);
-			$oReturn->assign("divDiario", "innerHTML", $sHtml);
-		} else {
-			unset($aDataGrid[0]);
-			$_SESSION['aDataGirdDiar'] = $aDatos;
-			$sHtml = "";
-			$oReturn->assign("divDiario", "innerHTML", $sHtml);
+		foreach ($aDataGrid as $idx => $row) {
+			if ($deletedDirIndex !== null && isset($row['DIR']) && is_numeric($row['DIR']) && $row['DIR'] > $deletedDirIndex) {
+				$row['DIR'] = $row['DIR'] - 1;
+			}
+			if ($deletedRetIndex !== null && isset($row['RET']) && is_numeric($row['RET']) && $row['RET'] > $deletedRetIndex) {
+				$row['RET'] = $row['RET'] - 1;
+			}
+			$aDataGrid[$idx] = $row;
 		}
+
+		$_SESSION['aDataGirdDiar'] = $aDataGrid;
+
+		$cont = 0;
+		unset($aDatos);
+		foreach ($aDataGrid as $aValues) {
+			$aux = 0;
+			foreach ($aValues as $aVal) {
+				if ($aux == 0) {
+					$aDatos[$cont][$aLabelDiar[$aux]] = '<div align="right">' . ($cont + 1) . '</div>';
+				} elseif ($aux == 10) {
+					$aDatos[$cont][$aLabelDiar[$aux]] = '<div align="center">
+																<img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/pencil.png"
+																title = "Presione aqui para Eliminar"
+																style="cursor: hand !important; cursor: pointer !important;"
+																onclick="javascript:modificar_valor(' . $cont . ', ' . $idempresa . ', ' . $idsucursal . ');"
+																alt="Eliminar"
+																align="bottom" />
+															</div>';
+				} elseif ($aux == 11) {
+					$currentDir = isset($aValues['DIR']) && is_numeric($aValues['DIR']) ? $aValues['DIR'] : -1;
+					$currentRet = isset($aValues['RET']) && is_numeric($aValues['RET']) ? $aValues['RET'] : -1;
+					$aDatos[$cont][$aLabelDiar[$aux]] = '<div align="center">
+																<img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/delete_1.png"
+																title = "Presione aqui para Eliminar"
+																style="cursor: hand !important; cursor: pointer !important;"
+																onclick="javascript:xajax_elimina_detalle_dir(' . $currentDir . ', ' . $idempresa . ', ' . $idsucursal . ', ' . $cont . ', ' . $currentRet . ');"
+																alt="Eliminar"
+																align="bottom" />
+															</div>';
+				} else {
+					$aDatos[$cont][$aLabelDiar[$aux]] = $aVal;
+				}
+				$aux++;
+			}
+			$cont++;
+		}
+
+		$_SESSION['aDataGirdDiar'] = $aDatos;
+		$sHtml = mostrar_grid_dia($idempresa, $idsucursal);
+		$oReturn->assign("divDiario", "innerHTML", $sHtml);
 	}
 
+	if ($deletedRetIndex !== null) {
+		if (!isset($_SESSION['aDataGirdRet']) || !is_array($_SESSION['aDataGirdRet'])) {
+			$oReturn->alert('No existe información de Retención en la sesión.');
+			return $oReturn;
+		}
 
-	// RETENCION
-	if ($id_ret !== '' && is_numeric($id_ret) && $id_ret >= 0) {
 		unset($aLabelGrid);
 		$aLabelGrid = array(
 			'Fila', 			'Cta Ret', 				'Cliente', 			'Factura', 			'Ret Cliente', 				'Porc(%)', 				'Base Impo',
 			'Valor', 			'N.- Retencion', 		'Detalle', 	 		'Origen', 			'Cotizacion',  				'Debito Moneda Local', 'Credito Monda Local',
 			'Debito Moneda Ext', 'Credito Moneda Ext', 	'Modificar', 		'Eliminar',			'DI'
 		);
-		unset($aDataGrid);
-		$contador   = 0;
 
-		$aDataGrid  = $_SESSION['aDataGirdRet'];
-		$contador   = count($aDataGrid);
-		//$oReturn->alert('ret '.$contador);
-		unset($aDatos);
-		if ($id_ret !== '' && is_numeric($id_ret) && $id_ret >= 0) {
-			if (!array_key_exists($id_ret, $aDataGrid)) {
-				$oReturn->alert('El índice de Retención no coincide con la sesión actual.');
-				return $oReturn;
-			}
-			if ($id_di !== '' && is_numeric($id_di) && $id_di >= 0
-				&& isset($aDataGrid[$id_ret]['DI']) && $aDataGrid[$id_ret]['DI'] != $id_di) {
-				$oReturn->alert('El índice del Diario no corresponde con el registro de Retención.');
-				return $oReturn;
-			}
+		$aDataGrid = $_SESSION['aDataGirdRet'];
+		if (!array_key_exists($deletedRetIndex, $aDataGrid)) {
+			$oReturn->alert('El índice de Retención no coincide con la sesión actual.');
+			return $oReturn;
 		}
-		if ($contador > 1) {
-			unset($aDataGrid[$id_ret]);
-			$aDataGrid = array_values($aDataGrid);
-			$cont = 0;
-			foreach ($aDataGrid as $aValues) {
-				$aux = 0;
-				foreach ($aValues as $aVal) {
-					if ($aux == 0) {
-						$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . ($cont + 1) . '</div>';
-					} elseif ($aux == 16) {
-						$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="center">
+
+		unset($aDataGrid[$deletedRetIndex]);
+		$aDataGrid = array_values($aDataGrid);
+
+		foreach ($aDataGrid as $idx => $row) {
+			if ($deletedDiIndex !== null && isset($row['DI']) && is_numeric($row['DI']) && $row['DI'] > $deletedDiIndex) {
+				$row['DI'] = $row['DI'] - 1;
+			}
+			$aDataGrid[$idx] = $row;
+		}
+
+		$_SESSION['aDataGirdRet'] = $aDataGrid;
+
+		$cont = 0;
+		unset($aDatos);
+		foreach ($aDataGrid as $aValues) {
+			$aux = 0;
+			foreach ($aValues as $aVal) {
+				if ($aux == 0) {
+					$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . ($cont + 1) . '</div>';
+				} elseif ($aux == 16) {
+					$currentDi = isset($aValues['DI']) && is_numeric($aValues['DI']) ? $aValues['DI'] : -1;
+					$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="center">
 																	<img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/pencil.png"
 																	title = "Presione aqui para Eliminar"
 																	style="cursor: hand !important; cursor: pointer !important;"
-																	onclick="javascript:xajax_elimina_detalle_dir(' . $cont . ', ' . $idempresa . ', ' . $idsucursal . ');"
+																	onclick="javascript:xajax_elimina_detalle_ret(' . $cont . ', ' . $idempresa . ', ' . $idsucursal . ', ' . $currentDi . ');"
 																	alt="Eliminar"
 																	align="bottom" />
 																</div>';
-					} else
-						$aDatos[$cont][$aLabelGrid[$aux]] = $aVal;
-					$aux++;
+				} else {
+					$aDatos[$cont][$aLabelGrid[$aux]] = $aVal;
 				}
-				$cont++;
+				$aux++;
 			}
-
-			$_SESSION['aDataGirdRet'] = $aDatos;
-			$sHtml = mostrar_grid_ret($idempresa, $idsucursal);
-			$oReturn->assign("divRet", "innerHTML", $sHtml);
-		} else {
-			unset($aDataGrid[0]);
-			$_SESSION['aDataGirdRet'] = $aDatos;
-			$sHtml = "";
-			$oReturn->assign("divRet", "innerHTML", $sHtml);
+			$cont++;
 		}
-	} // fin reten if
 
+		$_SESSION['aDataGirdRet'] = $aDatos;
+		$sHtml = mostrar_grid_ret($idempresa, $idsucursal);
+		$oReturn->assign("divRet", "innerHTML", $sHtml);
+	}
 
-	// TOTAL DIARIO
 	$oReturn->script("total_diario();");
 	return $oReturn;
 }
@@ -3651,24 +3668,100 @@ function elimina_detalle_dia($id = null, $idempresa, $idsucursal)
 
 	$aLabelDiar = array(
 		'Fila', 				'Cuenta', 				'Nombre', 		'Documento', 		'Cotizacion', 		'Debito Moneda Local', 		'Credito Moneda Local',
-		'Debito Moneda Ext', 	'Credito Moneda Ext', 	'Detalle', 		'Modificar', 		'Eliminar', 		'Centro Costo', 			'Centro Actividad'
+		'Debito Moneda Ext', 	'Credito Moneda Ext', 	'Detalle', 		'Modificar', 		'Eliminar', 		'Centro Costo', 			'Centro Actividad',
+		'DIR',					'RET'
 	);
 
-	$aDataGrid = $_SESSION['aDataGirdDiar'];
-	$contador = count($aDataGrid);
-	if ($contador > 1) {
-		unset($aDataGrid[$id]);
-		$_SESSION['aDataGirdDiar'] = $aDataGrid;
-		$sHtml = mostrar_grid_dir($idempresa, $idsucursal);
-		$oReturn->assign("divDiario", "innerHTML", $sHtml);
-	} else {
-		unset($aDataGrid[0]);
-		$_SESSION['aDataGirdDiar'] = $aDatos;
-		$sHtml = "";
-		$oReturn->assign("divDiario", "innerHTML", $sHtml);
+	if (!isset($_SESSION['aDataGirdDiar']) || !is_array($_SESSION['aDataGirdDiar'])) {
+		$oReturn->alert('No existe información de Diario en la sesión.');
+		return $oReturn;
 	}
 
+	$aDataGrid = $_SESSION['aDataGirdDiar'];
+	if ($id === null || !is_numeric($id) || !array_key_exists($id, $aDataGrid)) {
+		$oReturn->alert('El índice del Diario no coincide con la sesión actual.');
+		return $oReturn;
+	}
 
+	unset($aDataGrid[$id]);
+	$aDataGrid = array_values($aDataGrid);
+
+	$_SESSION['aDataGirdDiar'] = $aDataGrid;
+
+	$cont = 0;
+	unset($aDatos);
+	foreach ($aDataGrid as $aValues) {
+		$aux = 0;
+		foreach ($aValues as $aVal) {
+			if ($aux == 0) {
+				$aDatos[$cont][$aLabelDiar[$aux]] = '<div align="right">' . ($cont + 1) . '</div>';
+			} elseif ($aux == 10) {
+				$aDatos[$cont][$aLabelDiar[$aux]] = '<div align="center">
+                                                                <img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/pencil.png"
+                                                                title = "Presione aqui para Eliminar"
+                                                                style="cursor: hand !important; cursor: pointer !important;"
+                                                                onclick="javascript:xajax_elimina_detalle_dir(' . $cont . ', ' . $idempresa . ', ' . $idsucursal . ');"
+                                                                alt="Eliminar"
+                                                                align="bottom" />
+                                                            </div>';
+			} elseif ($aux == 11) {
+				$currentDir = isset($aValues['DIR']) && is_numeric($aValues['DIR']) ? $aValues['DIR'] : -1;
+				$currentRet = isset($aValues['RET']) && is_numeric($aValues['RET']) ? $aValues['RET'] : -1;
+				$aDatos[$cont][$aLabelDiar[$aux]] = '<div align="center">
+                                                                <img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/delete_1.png"
+                                                                title = "Presione aqui para Eliminar"
+                                                                style="cursor: hand !important; cursor: pointer !important;"
+                                                                onclick="javascript:xajax_elimina_detalle_dir(' . $currentDir . ', ' . $idempresa . ', ' . $idsucursal . ', ' . $cont . ', ' . $currentRet . ');"
+                                                                alt="Eliminar"
+                                                                align="bottom" />
+                                                            </div>';
+			} else {
+				$aDatos[$cont][$aLabelDiar[$aux]] = $aVal;
+			}
+			$aux++;
+		}
+		$cont++;
+	}
+
+	$_SESSION['aDataGirdDiar'] = $aDatos;
+	$sHtml = mostrar_grid_dia($idempresa, $idsucursal);
+	$oReturn->assign("divDiario", "innerHTML", $sHtml);
+
+	if (isset($_SESSION['aDataGirdDir']) && is_array($_SESSION['aDataGirdDir'])) {
+		$aDataGrid = $_SESSION['aDataGirdDir'];
+		foreach ($aDataGrid as $idx => $row) {
+			if (isset($row['DI']) && is_numeric($row['DI'])) {
+				if ($row['DI'] > $id) {
+					$row['DI'] = $row['DI'] - 1;
+				} elseif ($row['DI'] == $id) {
+					$row['DI'] = -1;
+				}
+				$aDataGrid[$idx] = $row;
+			}
+		}
+		$_SESSION['aDataGirdDir'] = $aDataGrid;
+		$sHtml = mostrar_grid_dir($idempresa, $idsucursal);
+		$oReturn->assign("divDir", "innerHTML", $sHtml);
+	}
+
+	if (isset($_SESSION['aDataGirdRet']) && is_array($_SESSION['aDataGirdRet'])) {
+		$aDataGrid = $_SESSION['aDataGirdRet'];
+		foreach ($aDataGrid as $idx => $row) {
+			if (isset($row['DI']) && is_numeric($row['DI'])) {
+				if ($row['DI'] > $id) {
+					$row['DI'] = $row['DI'] - 1;
+				} elseif ($row['DI'] == $id) {
+					$row['DI'] = -1;
+				}
+				$aDataGrid[$idx] = $row;
+			}
+		}
+		$_SESSION['aDataGirdRet'] = $aDataGrid;
+		$sHtml = mostrar_grid_ret($idempresa, $idsucursal);
+		$oReturn->assign("divRet", "innerHTML", $sHtml);
+	}
+
+	$oReturn->script("total_diario();");
 	return $oReturn;
 }
 
@@ -3991,6 +4084,12 @@ function elimina_detalle_ret($id = null, $idempresa, $idsucursal, $id_di)
 		'Modificar', 		'Eliminar',				'DI'
 	);
 
+	$aLabelDiar = array(
+		'Fila', 			 'Cuenta', 				'Nombre', 		'Documento', 		'Cotizacion', 			'Debito Moneda Local', 		'Credito Moneda Local',
+		'Debito Moneda Ext', 'Credito Moneda Ext', 	'Detalle',		'Modificar', 		'Eliminar',				'Centro Costo',   			'Centro Actividad',
+		'DIR',				 'RET'
+	);
+
 	if (!isset($_SESSION['aDataGirdRet']) || !is_array($_SESSION['aDataGirdRet'])) {
 		$oReturn->alert('No existe información de Retención en la sesión.');
 		return $oReturn;
@@ -4000,41 +4099,55 @@ function elimina_detalle_ret($id = null, $idempresa, $idsucursal, $id_di)
 		return $oReturn;
 	}
 
-	$aDataGrid = $_SESSION['aDataGirdRet'];
+	$deletedRetIndex = null;
+	$deletedDiIndex = null;
 
-	$contador = count($aDataGrid);
+	$aDataGrid = $_SESSION['aDataGirdRet'];
 	if ($id !== null && is_numeric($id) && $id >= 0) {
 		if (!array_key_exists($id, $aDataGrid)) {
 			$oReturn->alert('El índice de Retención no coincide con la sesión actual.');
 			return $oReturn;
 		}
-		if ($id_di !== '' && is_numeric($id_di) && $id_di >= 0
-			&& isset($aDataGrid[$id]['DI']) && $aDataGrid[$id]['DI'] != $id_di) {
-			$oReturn->alert('El índice del Diario no corresponde con el registro de Retención.');
-			return $oReturn;
+
+		$deletedRetIndex = $id;
+		if (isset($aDataGrid[$id]['DI']) && is_numeric($aDataGrid[$id]['DI'])) {
+			$deletedDiIndex = (int)$aDataGrid[$id]['DI'];
+		} elseif ($id_di !== '' && is_numeric($id_di)) {
+			$deletedDiIndex = (int)$id_di;
 		}
-	}
-	if ($contador > 1) {
+
 		unset($aDataGrid[$id]);
 		$aDataGrid = array_values($aDataGrid);
-		$cont 	   = 0;
 
+		foreach ($aDataGrid as $idx => $row) {
+			if ($deletedDiIndex !== null && isset($row['DI']) && is_numeric($row['DI']) && $row['DI'] > $deletedDiIndex) {
+				$row['DI'] = $row['DI'] - 1;
+			}
+			$aDataGrid[$idx] = $row;
+		}
+
+		$_SESSION['aDataGirdRet'] = $aDataGrid;
+
+		$cont = 0;
+		unset($aDatos);
 		foreach ($aDataGrid as $aValues) {
-			$aux     = 0;
+			$aux = 0;
 			foreach ($aValues as $aVal) {
 				if ($aux == 0) {
 					$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . ($cont + 1) . '</div>';
 				} elseif ($aux == 16) {
+					$currentDi = isset($aValues['DI']) && is_numeric($aValues['DI']) ? $aValues['DI'] : -1;
 					$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="center">
 																			<img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/pencil.png"
 																			title = "Presione aqui para Eliminar"
 																			style="cursor: hand !important; cursor: pointer !important;"
-																			onclick="javascript:xajax_elimina_detalle_ret(' . $cont . ', ' . $idempresa . ', ' . $idsucursal . ');"
+																			onclick="javascript:xajax_elimina_detalle_ret(' . $cont . ', ' . $idempresa . ', ' . $idsucursal . ', ' . $currentDi . ');"
 																			alt="Eliminar"
 																			align="bottom" />
 																		</div>';
-				} else
+				} else {
 					$aDatos[$cont][$aLabelGrid[$aux]] = $aVal;
+				}
 				$aux++;
 			}
 			$cont++;
@@ -4043,43 +4156,40 @@ function elimina_detalle_ret($id = null, $idempresa, $idsucursal, $id_di)
 		$_SESSION['aDataGirdRet'] = $aDatos;
 		$sHtml = mostrar_grid_ret($idempresa, $idsucursal);
 		$oReturn->assign("divRet", "innerHTML", $sHtml);
-	} else {
-		unset($aDataGrid[0]);
-		$_SESSION['aDataGirdRet'] = $aDatos;
-		$sHtml = "";
-		$oReturn->assign("divRet", "innerHTML", $sHtml);
 	}
 
+	if ($id_di !== '' && is_numeric($id_di)) {
+		$deletedDiIndex = $deletedDiIndex === null ? (int)$id_di : $deletedDiIndex;
+	}
 
-	// DIARIO						
-	$aLabelGrid = array(
-		'Fila', 			 'Cuenta', 				'Nombre', 		'Documento', 		'Cotizacion', 			'Debito Moneda Local', 		'Credito Moneda Local',
-		'Debito Moneda Ext', 'Credito Moneda Ext', 	'Detalle',		'Modificar', 		'Eliminar',				'Centro Costo',   			'Centro Actividad',
-		'DIR',				 'RET'
-	);
-
-	unset($aDataGrid);
-	$contador   = 0;
-	$aDataGrid  = $_SESSION['aDataGirdDiar'];
-	$contador   = count($aDataGrid);
-	unset($aDatos);
-	if ($id_di !== '' && is_numeric($id_di) && $id_di >= 0) {
-		if (!array_key_exists($id_di, $aDataGrid)) {
+	if ($deletedDiIndex !== null) {
+		$aDataGrid = $_SESSION['aDataGirdDiar'];
+		if (!array_key_exists($deletedDiIndex, $aDataGrid)) {
 			$oReturn->alert('El índice del Diario no coincide con la sesión actual.');
 			return $oReturn;
 		}
-	}
-	if ($contador > 1) {
-		unset($aDataGrid[$id_di]);
+
+		unset($aDataGrid[$deletedDiIndex]);
 		$aDataGrid = array_values($aDataGrid);
+
+		foreach ($aDataGrid as $idx => $row) {
+			if ($deletedRetIndex !== null && isset($row['RET']) && is_numeric($row['RET']) && $row['RET'] > $deletedRetIndex) {
+				$row['RET'] = $row['RET'] - 1;
+			}
+			$aDataGrid[$idx] = $row;
+		}
+
+		$_SESSION['aDataGirdDiar'] = $aDataGrid;
+
 		$cont = 0;
+		unset($aDatos);
 		foreach ($aDataGrid as $aValues) {
 			$aux = 0;
 			foreach ($aValues as $aVal) {
 				if ($aux == 0) {
-					$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . ($cont + 1) . '</div>';
+					$aDatos[$cont][$aLabelDiar[$aux]] = '<div align="right">' . ($cont + 1) . '</div>';
 				} elseif ($aux == 10) {
-					$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="center">
+					$aDatos[$cont][$aLabelDiar[$aux]] = '<div align="center">
                                                                 <img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/pencil.png"
                                                                 title = "Presione aqui para Eliminar"
                                                                 style="cursor: hand !important; cursor: pointer !important;"
@@ -4087,8 +4197,20 @@ function elimina_detalle_ret($id = null, $idempresa, $idsucursal, $id_di)
                                                                 alt="Eliminar"
                                                                 align="bottom" />
                                                             </div>';
-				} else
-					$aDatos[$cont][$aLabelGrid[$aux]] = $aVal;
+				} elseif ($aux == 11) {
+					$currentDir = isset($aValues['DIR']) && is_numeric($aValues['DIR']) ? $aValues['DIR'] : -1;
+					$currentRet = isset($aValues['RET']) && is_numeric($aValues['RET']) ? $aValues['RET'] : -1;
+					$aDatos[$cont][$aLabelDiar[$aux]] = '<div align="center">
+                                                                <img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/delete_1.png"
+                                                                title = "Presione aqui para Eliminar"
+                                                                style="cursor: hand !important; cursor: pointer !important;"
+                                                                onclick="javascript:xajax_elimina_detalle_dir(' . $currentDir . ', ' . $idempresa . ', ' . $idsucursal . ', ' . $cont . ', ' . $currentRet . ');"
+                                                                alt="Eliminar"
+                                                                align="bottom" />
+                                                            </div>';
+				} else {
+					$aDatos[$cont][$aLabelDiar[$aux]] = $aVal;
+				}
 				$aux++;
 			}
 			$cont++;
@@ -4097,14 +4219,8 @@ function elimina_detalle_ret($id = null, $idempresa, $idsucursal, $id_di)
 		$_SESSION['aDataGirdDiar'] = $aDatos;
 		$sHtml = mostrar_grid_dia($idempresa, $idsucursal);
 		$oReturn->assign("divDiario", "innerHTML", $sHtml);
-	} else {
-		unset($aDataGrid[0]);
-		$_SESSION['aDataGirdDiar'] = $aDatos;
-		$sHtml = "";
-		$oReturn->assign("divDiario", "innerHTML", $sHtml);
 	}
 
-	// TOTAL DIARIO
 	$oReturn->script("total_diario();");
 
 	return $oReturn;
