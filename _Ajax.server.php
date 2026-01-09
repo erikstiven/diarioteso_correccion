@@ -2747,6 +2747,8 @@ function elimina_detalle_dir($id = null, $idempresa, $idsucursal, $id_di = '', $
 		$id_index = grid_index_by_id($aDataGrid, $aLabelGrid[0], $id);
 		if ($id_index !== null) {
 			unset($aDataGrid[$id_index]);
+		} else {
+			$oReturn->alert('No se pudo eliminar el registro. Actualice la lista e intente nuevamente.');
 		}
 		$aDataGrid = array_values($aDataGrid);
 		foreach ($aDataGrid as $idx => $row) {
@@ -2783,6 +2785,8 @@ function elimina_detalle_dir($id = null, $idempresa, $idsucursal, $id_di = '', $
 		$id_di_index = grid_index_by_id($aDataGrid, $aLabelDiar[0], $id_di);
 		if ($id_di_index !== null) {
 			unset($aDataGrid[$id_di_index]);
+		} elseif ($id_di !== '' && $id_di !== null) {
+			$oReturn->alert('No se pudo eliminar el diario relacionado. Actualice la lista e intente nuevamente.');
 		}
 		$aDataGrid = array_values($aDataGrid);
 		foreach ($aDataGrid as $idx => $row) {
@@ -2819,6 +2823,8 @@ function elimina_detalle_dir($id = null, $idempresa, $idsucursal, $id_di = '', $
 			$id_ret_index = grid_index_by_id($aDataGrid, $aLabelGrid[0], $id_ret);
 			if ($id_ret_index !== null) {
 				unset($aDataGrid[$id_ret_index]);
+			} else {
+				$oReturn->alert('No se pudo eliminar la retencion relacionada. Actualice la lista e intente nuevamente.');
 			}
 			$aDataGrid = array_values($aDataGrid);
 			foreach ($aDataGrid as $idx => $row) {
@@ -3634,6 +3640,8 @@ function elimina_detalle_dia($id = null, $idempresa, $idsucursal)
 		$id_index = grid_index_by_id($aDataGrid, $aLabelDiar[0], $id);
 		if ($id_index !== null) {
 			unset($aDataGrid[$id_index]);
+		} else {
+			$oReturn->alert('No se pudo eliminar el registro. Actualice la lista e intente nuevamente.');
 		}
 		$aDataGrid = array_values($aDataGrid);
 		foreach ($aDataGrid as $idx => $row) {
@@ -4004,6 +4012,8 @@ function elimina_detalle_ret($id = null, $idempresa, $idsucursal, $id_di)
 		$id_index = grid_index_by_id($aDataGrid, $aLabelGrid[0], $id);
 		if ($id_index !== null) {
 			unset($aDataGrid[$id_index]);
+		} else {
+			$oReturn->alert('No se pudo eliminar la retencion. Actualice la lista e intente nuevamente.');
 		}
 		$aDataGrid = array_values($aDataGrid);
 		foreach ($aDataGrid as $idx => $row) {
@@ -4037,6 +4047,8 @@ function elimina_detalle_ret($id = null, $idempresa, $idsucursal, $id_di)
 			$id_di_index = grid_index_by_id($aDataGrid, $aLabelGrid[0], $id_di);
 			if ($id_di_index !== null) {
 				unset($aDataGrid[$id_di_index]);
+			} else {
+				$oReturn->alert('No se pudo eliminar el diario relacionado. Actualice la lista e intente nuevamente.');
 			}
 			$aDataGrid = array_values($aDataGrid);
 			foreach ($aDataGrid as $idx => $row) {
