@@ -2,6 +2,45 @@
 require("_Ajax.comun.php"); // No modificar esta linea
 include_once './mayorizacion.inc.php';
 
+function session_grid_key($base, $idempresa = null, $idsucursal = null)
+{
+	if ($idempresa === null && isset($_SESSION['U_EMPRESA'])) {
+		$idempresa = $_SESSION['U_EMPRESA'];
+	}
+	if ($idsucursal === null && isset($_SESSION['U_SUCURSAL'])) {
+		$idsucursal = $_SESSION['U_SUCURSAL'];
+	}
+	return $base . '_' . (string)$idempresa . '_' . (string)$idsucursal;
+}
+
+function session_grid_get($base, $idempresa = null, $idsucursal = null)
+{
+	$key = session_grid_key($base, $idempresa, $idsucursal);
+	return isset($_SESSION[$key]) ? $_SESSION[$key] : array();
+}
+
+function session_grid_set($base, $value, $idempresa = null, $idsucursal = null)
+{
+	$key = session_grid_key($base, $idempresa, $idsucursal);
+	$_SESSION[$key] = $value;
+}
+
+function session_grid_unset($base, $idempresa = null, $idsucursal = null)
+{
+	$key = session_grid_key($base, $idempresa, $idsucursal);
+	unset($_SESSION[$key]);
+}
+
+function grid_index_by_id($grid, $label, $id)
+{
+	foreach ($grid as $index => $row) {
+		if (isset($row[$label]) && (string)$row[$label] === (string)$id) {
+			return $index;
+		}
+	}
+	return null;
+}
+
 /*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 // S E R V I D O R   A J A X //
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
@@ -50,9 +89,6 @@ function agrega_modifica_grid_dir_cheq($nTipo = 0, $aForm = '', $total_cheque = 
 	$oIfx->DSN = $DSN_Ifx;
 	$oIfx->Conectar();
 
-	$aDataGrid = $_SESSION['aDataGirdDir'];
-	$aDataDiar = $_SESSION['aDataGirdDiar'];
-
 	$aLabelGrid = array(
 		'Id', 'Cliente', 'SubCliente', 'Tipo', 'Factura', 'Fec. Vence', 'Detalle', 'Cotizacion',
 		'Debito Moneda Local', 'Credito Moneda Local',
@@ -81,6 +117,8 @@ function agrega_modifica_grid_dir_cheq($nTipo = 0, $aForm = '', $total_cheque = 
 	if (empty($mone_cod)) {
 		$mone_cod = $aForm["moneda"];
 	}
+	$aDataGrid = session_grid_get('aDataGirdDir', $idempresa, $idsucursal);
+	$aDataDiar = session_grid_get('aDataGirdDiar', $idempresa, $idsucursal);
 
 	$sql      = "select pcon_mon_base from saepcon where pcon_cod_empr = $idempresa ";
 	$mone_base = consulta_string_func($sql, 'pcon_mon_base', $oIfx, '');
@@ -324,13 +362,13 @@ function agrega_modifica_grid_dir_cheq($nTipo = 0, $aForm = '', $total_cheque = 
 
 	$oReturn->assign("actividad", "value", $actividad);
 
-	$_SESSION['aDataGirdDir'] = $aDataGrid;
+	session_grid_set('aDataGirdDir', $aDataGrid, isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 	$sHtml = mostrar_grid_dir($idempresa, $idsucursal);
 	$oReturn->assign("divDir", "innerHTML", $sHtml);
 
 	// DIARIO
 	$sHtml = '';
-	$_SESSION['aDataGirdDiar'] = $aDataDiar;
+	session_grid_set('aDataGirdDiar', $aDataDiar, isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 	$sHtml = mostrar_grid_dia($idempresa, $idsucursal);
 	$oReturn->assign("divDiario", "innerHTML", $sHtml);
 
@@ -540,7 +578,7 @@ function genera_grid($aData = null, $aLabel = null, $sTitulo = 'Reporte', $iAnch
 					$sHtml .= '<td align="right">' . number_format($aData[$i][$aLabel[$j]], 2, ',', '.') . '</td>';
 				else
 					//				$sHtml .= '<td align="left">'.$aData[$i][$aLabel[$j]].'</td>';
-					if ($j == 13 && $sTitulo != 'DIARIO') {
+					if ($sTitulo != 'DIARIO' && $sLabel[0] == 'DI') {
 						$sHtml .= '<td align="left" style="display:none">' . $aData[$i][$aLabel[$j]] . '</td>';
 					} else {
 						$sHtml .= '<td align="left">' . $aData[$i][$aLabel[$j]] . '</td>';
@@ -572,9 +610,9 @@ function genera_grid($aData = null, $aLabel = null, $sTitulo = 'Reporte', $iAnch
 			}
 		}
 		// Debito
-		$total_debito_ad = number_format($Totales[5], 2, '.', ',');
+		$total_debito_ad = is_array($Totales) ? (float)$Totales[5] : 0;
 		// Credito
-		$total_credito_ad = number_format($Totales[6], 2, '.', ',');
+		$total_credito_ad = is_array($Totales) ? (float)$Totales[6] : 0;
 
 		$sHtml .= '</tr>';
 
@@ -594,28 +632,21 @@ function genera_grid($aData = null, $aLabel = null, $sTitulo = 'Reporte', $iAnch
 				$valCre_Ext = 0;
 				for ($i = 0; $i < $iLabel; $i++) {
 					if ($i == 5) {
-						$total_deb = number_format($Totales[$i], 2, '.', ',');
-						$valDeb += $total_deb;
+						$valDeb += (float)$Totales[$i];
 					} elseif ($i == 6) {
-						$total_deb = number_format($Totales[$i], 2, '.', ',');
-						$valCre += $total_deb;
+						$valCre += (float)$Totales[$i];
 					} elseif ($i == 7) {
-						$total_deb = number_format($Totales[$i], 2, '.', ',');
-						$valDeb_Ext += $total_deb;
+						$valDeb_Ext += (float)$Totales[$i];
 					} elseif ($i == 8) {
-						$total_deb = number_format($Totales[$i], 2, '.', ',');
-						$valCre_Ext += $total_deb;
+						$valCre_Ext += (float)$Totales[$i];
 					}
 				} //fin for
 
 				if ($valDeb > $valCre) {
 					$saldoCre = $valCre - $valDeb;
-					$saldoCre = number_format($saldoCre, 2, '.', ',');
 					$arraySaldo[] = array('CR', $saldoCre);
 				} elseif ($valDeb < $valCre) {
 					$saldoDeb = $valDeb - $valCre;
-					$saldoDeb = number_format($saldoDeb, 2, '.', ',');
-
 					$arraySaldo[] = array('DB', $saldoDeb);
 				}
 
@@ -623,25 +654,23 @@ function genera_grid($aData = null, $aLabel = null, $sTitulo = 'Reporte', $iAnch
 				// MONDA Ext
 				if ($valDeb_Ext > $valCre_Ext) {
 					$saldoCre_Ext = $valCre_Ext - $valDeb_Ext;
-					$saldoCre_Ext = number_format($saldoCre_Ext, 2, '.', ',');
 				} elseif ($valDeb_Ext < $valCre_Ext) {
 					$saldoDeb_Ext = $valDeb_Ext - $valCre_Ext;
-					$saldoCre_Ext = number_format($saldoCre_Ext, 2, '.', ',');
 				}
 
 				// Control asiento Descuadrado
 				// var_dump($Totales);
 				// exit;
-				$sHtml .= '<td style="display: none" class="fecha_letra" align="right"><input id="debito_total" name="debito_total" value="' . $total_debito_ad . '" /></td>';
-				$sHtml .= '<td style="display: none" class="fecha_letra" align="right"><input id="credito_total" name="credito_total" value="' . $total_credito_ad . '" /></td>';
+				$sHtml .= '<td style="display: none" class="fecha_letra" align="right"><input id="debito_total" name="debito_total" value="' . number_format($total_debito_ad, 2, '.', '') . '" /></td>';
+				$sHtml .= '<td style="display: none" class="fecha_letra" align="right"><input id="credito_total" name="credito_total" value="' . number_format($total_credito_ad, 2, '.', '') . '" /></td>';
 
 
 				$sHtml .= '<td class="fecha_letra" align="right">SALDO</td>';
 				$sHtml .= '<td colspan="4"></td>';
-				$sHtml .= '<td class="fecha_letra" align="right" >' . $saldoDeb . '</td>';
-				$sHtml .= '<td class="fecha_letra" align="right" >' . $saldoCre . '</td>';
-				$sHtml .= '<td class="fecha_letra" align="right" >' . $saldoDeb_Ext . '</td>';
-				$sHtml .= '<td class="fecha_letra" align="right" >' . $saldoCre_Ext . '</td>';
+				$sHtml .= '<td class="fecha_letra" align="right" >' . number_format($saldoDeb, 2, '.', ',') . '</td>';
+				$sHtml .= '<td class="fecha_letra" align="right" >' . number_format($saldoCre, 2, '.', ',') . '</td>';
+				$sHtml .= '<td class="fecha_letra" align="right" >' . number_format($saldoDeb_Ext, 2, '.', ',') . '</td>';
+				$sHtml .= '<td class="fecha_letra" align="right" >' . number_format($saldoCre_Ext, 2, '.', ',') . '</td>';
 				$sHtml .= '<td colspan="10"></td>';
 			}
 			$_SESSION['ARRAY_SALDOS_TMP'] = $arraySaldo;
@@ -816,13 +845,13 @@ function genera_formulario($sAccion = 'nuevo', $aForm = '', $idModulo = '197', $
 			$ifu->AgregarCampoTexto('compr_cod', 'Comprobante N.-|left', false, '', 150, 120);
 			$ifu->AgregarComandoAlPonerEnfoque('compr_cod', 'this.blur()');
 
-			unset($_SESSION['aDataGirdDir']);
+			session_grid_unset('aDataGirdDir', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 			$oReturn->assign("divDir", "innerHTML", "");
 
-			unset($_SESSION['aDataGirdDiar']);
+			session_grid_unset('aDataGirdDiar', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 			$oReturn->assign("divDiario", "innerHTML", "");
 
-			unset($_SESSION['aDataGirdRet']);
+			session_grid_unset('aDataGirdRet', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 			$oReturn->assign("divRet", "innerHTML", "");
 
 			// DIRECTORIO
@@ -1847,8 +1876,8 @@ function agrega_modifica_grid_dir($nTipo = 0, $aForm = '', $id = '', $idempresa 
 
 
 
-		$aDataGrid = $_SESSION['aDataGirdDir'];
-		$aDataDiar = $_SESSION['aDataGirdDiar'];
+		$aDataGrid = session_grid_get('aDataGirdDir', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
+		$aDataDiar = session_grid_get('aDataGirdDiar', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 		$array     = $_SESSION['U_FACTURA'];
 
 		$aLabelGrid = array(
@@ -2082,13 +2111,13 @@ function agrega_modifica_grid_dir($nTipo = 0, $aForm = '', $id = '', $idempresa 
 
 		}
 
-		$_SESSION['aDataGirdDir'] = $aDataGrid;
+		session_grid_set('aDataGirdDir', $aDataGrid, isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 		$sHtml = mostrar_grid_dir($idempresa, $idsucursal);
 		$oReturn->assign("divDir", "innerHTML", $sHtml);
 
 		// DIARIO
 		$sHtml = '';
-		$_SESSION['aDataGirdDiar'] = $aDataDiar;
+		session_grid_set('aDataGirdDiar', $aDataDiar, isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 		$sHtml = mostrar_grid_dia($idempresa, $idsucursal);
 		$oReturn->assign("divDiario", "innerHTML", $sHtml);
 
@@ -2116,8 +2145,8 @@ function agrega_modifica_grid_dir_ori($nTipo = 0, $aForm = '', $id = '')
 	$oIfx->DSN = $DSN_Ifx;
 	$oIfx->Conectar();
 
-	$aDataGrid = $_SESSION['aDataGirdDir'];
-	$aDataDiar = $_SESSION['aDataGirdDiar'];
+	$aDataGrid = session_grid_get('aDataGirdDir', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
+	$aDataDiar = session_grid_get('aDataGirdDiar', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 
 	$aLabelGrid = array(
 		'Id', 'Cliente', 'SubCliente', 'Tipo', 'Factura', 'Fec. Vence', 'Detalle', 'Cotizacion',
@@ -2342,13 +2371,13 @@ function agrega_modifica_grid_dir_ori($nTipo = 0, $aForm = '', $id = '')
 		$aDataDiar[$contd][$aLabelDiar[14]] = $cont;
 	}
 
-	$_SESSION['aDataGirdDir'] = $aDataGrid;
+	session_grid_set('aDataGirdDir', $aDataGrid, isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 	$sHtml = mostrar_grid_dir($idempresa, $idsucursal);
 	$oReturn->assign("divDir", "innerHTML", $sHtml);
 
 	// DIARIO
 	$sHtml = '';
-	$_SESSION['aDataGirdDiar'] = $aDataDiar;
+	session_grid_set('aDataGirdDiar', $aDataDiar, isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 	$sHtml = mostrar_grid_dia($idempresa, $idsucursal);
 	$oReturn->assign("divDiario", "innerHTML", $sHtml);
 
@@ -2412,7 +2441,7 @@ function agrega_modifica_grid_dir_ori($nTipo = 0, $aForm = '', $id = '')
 		// Proceso extra borrar
 		// -----------------------------------------------------
 
-		$aDataDiar = $_SESSION['aDataGirdDiar'];
+		$aDataDiar = session_grid_get('aDataGirdDiar', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 
 		$aLabelDiar = array(
 			'Fila', 				'Cuenta', 				'Nombre', 		'Documento', 		'Cotizacion',
@@ -2472,7 +2501,7 @@ function agrega_modifica_grid_dir_ori($nTipo = 0, $aForm = '', $id = '')
 
 		// DIARIO
 		$sHtml = '';
-		$_SESSION['aDataGirdDiar'] = $aDataDiar;
+		session_grid_set('aDataGirdDiar', $aDataDiar, isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 		$sHtml = mostrar_grid_dia($idempresa, $idsucursal);
 		$oReturn->assign("divDiario", "innerHTML", $sHtml);
 
@@ -2511,7 +2540,7 @@ function agrega_modifica_grid_dir_ori($nTipo = 0, $aForm = '', $id = '')
 		// Proceso extra borrar
 		// -----------------------------------------------------
 
-		$aDataDiar = $_SESSION['aDataGirdDiar'];
+		$aDataDiar = session_grid_get('aDataGirdDiar', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 
 		$aLabelDiar = array(
 			'Fila', 				'Cuenta', 				'Nombre', 		'Documento', 		'Cotizacion',
@@ -2571,7 +2600,7 @@ function agrega_modifica_grid_dir_ori($nTipo = 0, $aForm = '', $id = '')
 
 		// DIARIO
 		$sHtml = '';
-		$_SESSION['aDataGirdDiar'] = $aDataDiar;
+		session_grid_set('aDataGirdDiar', $aDataDiar, isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 		$sHtml = mostrar_grid_dia($idempresa, $idsucursal);
 		$oReturn->assign("divDiario", "innerHTML", $sHtml);
 
@@ -2612,7 +2641,7 @@ function mostrar_grid_dir($idempresa, $idsucursal)
 	$oIfx->DSN = $DSN_Ifx;
 	$oIfx->Conectar();
 
-	$aDataGrid  = $_SESSION['aDataGirdDir'];
+	$aDataGrid  = session_grid_get('aDataGirdDir', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 
 	$aLabelGrid = array(
 		'Id', 'Cliente', 'SubCliente', 'Tipo', 'Factura', 'Fec. Vence', 'Detalle',
@@ -2623,12 +2652,14 @@ function mostrar_grid_dir($idempresa, $idsucursal)
 	$cont    = 0;
 	$tot_cre = 0;
 	$tot_deb = 0;
-	foreach ($aDataGrid as $aValues) {
-		$aux     = 0;
-		foreach ($aValues as $aVal) {
-			if ($aux == 0) {
-				$aDatos[$cont][$aLabelGrid[$aux]] = ($cont + 1);
-			} elseif ($aux == 1) {
+		foreach ($aDataGrid as $aValues) {
+			$aux     = 0;
+			$id_di = null;
+			$row_id = isset($aValues[$aLabelGrid[0]]) ? $aValues[$aLabelGrid[0]] : $cont;
+			foreach ($aValues as $aVal) {
+				if ($aux == 0) {
+					$aDatos[$cont][$aLabelGrid[$aux]] = ($cont + 1);
+				} elseif ($aux == 1) {
 				$sql = "select  clpv_nom_clpv from saeclpv where clpv_cod_clpv = $aVal and clpv_cod_empr = $idempresa";
 				$clpv_nom = consulta_string_func($sql, 'clpv_nom_clpv', $oIfx, '');
 				$aDatos[$cont][$aLabelGrid[$aux]] = $clpv_nom;
@@ -2657,20 +2688,28 @@ function mostrar_grid_dir($idempresa, $idsucursal)
 			} elseif ($aux == 9) {
 				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . number_format(round($aVal, 2), 2, '.', ',') . '</div>';
 				$tot_cre += $aVal;
-			} elseif ($aux == 10) {
-				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . number_format(round($aVal, 2), 2, '.', ',') . '</div>';
-			} elseif ($aux == 11) {
-				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . number_format(round($aVal, 2), 2, '.', ',') . '</div>';
-			} elseif ($aux == 12) {
-				$aDatos[$cont][$aLabelGrid[$aux]] = '<img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/delete.png"
+				} elseif ($aux == 10) {
+					$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . number_format(round($aVal, 2), 2, '.', ',') . '</div>';
+				} elseif ($aux == 11) {
+					$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . number_format(round($aVal, 2), 2, '.', ',') . '</div>';
+				} elseif ($aux == 12) {
+					$aDatos[$cont][$aLabelGrid[$aux]] = '';
+				} elseif ($aux == 13) {
+					if ($id_di === null && isset($aValues[$aLabelGrid[14]])) {
+						$id_di = $aValues[$aLabelGrid[14]];
+					}
+					$aDatos[$cont][$aLabelGrid[$aux]] = '<img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/delete.png"
 															title = "Presione aqui para Eliminar"
 															style="cursor:pointer; width:20px; height:20px; margin:auto; display:block;"
-															onclick="javascript:xajax_elimina_detalle_dir(' . $cont . ', ' . $idempresa . ', ' . $idsucursal . ');"
+															onclick="javascript:xajax_elimina_detalle_dir(' . $row_id . ', ' . $idempresa . ', ' . $idsucursal . ', ' . $id_di . ');"
 															alt="Eliminar"
 															align="bottom" />';
-			} else
-				$aDatos[$cont][$aLabelGrid[$aux]] = $aVal;
-			$aux++;
+				} elseif ($aux == 14) {
+					$id_di = $aVal;
+					$aDatos[$cont][$aLabelGrid[$aux]] = $aVal;
+				} else
+					$aDatos[$cont][$aLabelGrid[$aux]] = $aVal;
+				$aux++;
 		}
 		$cont++;
 	}
@@ -2701,41 +2740,27 @@ function elimina_detalle_dir($id = null, $idempresa, $idsucursal, $id_di = '', $
 	unset($aDataGrid);
 	$contador  = 0;
 
-	$aDataGrid = $_SESSION['aDataGirdDir'];
+	$aDataGrid = session_grid_get('aDataGirdDir', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 	$contador  = count($aDataGrid);
 	//$oReturn->alert('DIR '.$contador);
 	if ($contador > 1) {
-		unset($aDataGrid[$id]);
+		$id_index = grid_index_by_id($aDataGrid, $aLabelGrid[0], $id);
+		if ($id_index !== null) {
+			unset($aDataGrid[$id_index]);
+		} else {
+			$oReturn->alert('No se pudo eliminar el registro. Actualice la lista e intente nuevamente.');
+		}
 		$aDataGrid = array_values($aDataGrid);
-		$cont 	   = 0;
-
-		foreach ($aDataGrid as $aValues) {
-			$aux     = 0;
-			foreach ($aValues as $aVal) {
-				if ($aux == 0) {
-					$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . ($cont + 1) . '</div>';
-				} elseif ($aux == 12) {
-					$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="center">
-																			<img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/pencil.png"
-																			title = "Presione aqui para Eliminar"
-																			style="cursor: hand !important; cursor: pointer !important;"
-																			onclick="javascript:xajax_elimina_detalle_dir(' . $cont . ');"
-																			alt="Eliminar"
-																			align="bottom" />
-																		</div>';
-				} else
-					$aDatos[$cont][$aLabelGrid[$aux]] = $aVal;
-				$aux++;
-			}
-			$cont++;
+		foreach ($aDataGrid as $idx => $row) {
+			$aDataGrid[$idx][$aLabelGrid[0]] = $idx;
 		}
 
-		$_SESSION['aDataGirdDir'] = $aDatos;
+		session_grid_set('aDataGirdDir', $aDataGrid, isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 		$sHtml = mostrar_grid_dir($idempresa, $idsucursal);
 		$oReturn->assign("divDir", "innerHTML", $sHtml);
 	} else {
 		unset($aDataGrid[0]);
-		$_SESSION['aDataGirdDir'] = $aDatos;
+		session_grid_set('aDataGirdDir', array(), isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 		$sHtml = "";
 		$oReturn->assign("divDir", "innerHTML", $sHtml);
 	}
@@ -2752,41 +2777,28 @@ function elimina_detalle_dir($id = null, $idempresa, $idsucursal, $id_di = '', $
 	);
 	unset($aDataGrid);
 	$contador   = 0;
-	$aDataGrid  = $_SESSION['aDataGirdDiar'];
+	$aDataGrid  = session_grid_get('aDataGirdDiar', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 	$contador   = count($aDataGrid);
 	//$oReturn->alert('DI '.$contador);
 	unset($aDatos);
 	if ($contador > 1) {
-		unset($aDataGrid[$id_di]);
+		$id_di_index = grid_index_by_id($aDataGrid, $aLabelDiar[0], $id_di);
+		if ($id_di_index !== null) {
+			unset($aDataGrid[$id_di_index]);
+		} elseif ($id_di !== '' && $id_di !== null) {
+			$oReturn->alert('No se pudo eliminar el diario relacionado. Actualice la lista e intente nuevamente.');
+		}
 		$aDataGrid = array_values($aDataGrid);
-		$cont = 0;
-		foreach ($aDataGrid as $aValues) {
-			$aux = 0;
-			foreach ($aValues as $aVal) {
-				if ($aux == 0) {
-					$aDatos[$cont][$aLabelDiar[$aux]] = '<div align="right">' . ($cont + 1) . '</div>';
-				} elseif ($aux == 10) {
-					$aDatos[$cont][$aLabelDiar[$aux]] = '<div align="center">
-                                                                <img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/pencil.png"
-                                                                title = "Presione aqui para Eliminar"
-                                                                style="cursor: hand !important; cursor: pointer !important;"
-                                                                onclick="javascript:modificar_valor(' . $cont . ', ' . $idempresa . ', ' . $idsucursal . ');"
-                                                                alt="Eliminar"
-                                                                align="bottom" />
-                                                            </div>';
-				} else
-					$aDatos[$cont][$aLabelDiar[$aux]] = $aVal;
-				$aux++;
-			}
-			$cont++;
+		foreach ($aDataGrid as $idx => $row) {
+			$aDataGrid[$idx][$aLabelDiar[0]] = $idx;
 		}
 
-		$_SESSION['aDataGirdDiar'] = $aDatos;
+		session_grid_set('aDataGirdDiar', $aDataGrid, isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 		$sHtml = mostrar_grid_dia($idempresa, $idsucursal);
 		$oReturn->assign("divDiario", "innerHTML", $sHtml);
 	} else {
 		unset($aDataGrid[0]);
-		$_SESSION['aDataGirdDiar'] = $aDatos;
+		session_grid_set('aDataGirdDiar', array(), isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 		$sHtml = "";
 		$oReturn->assign("divDiario", "innerHTML", $sHtml);
 	}
@@ -2803,41 +2815,28 @@ function elimina_detalle_dir($id = null, $idempresa, $idsucursal, $id_di = '', $
 		unset($aDataGrid);
 		$contador   = 0;
 
-		$aDataGrid  = $_SESSION['aDataGirdRet'];
+		$aDataGrid  = session_grid_get('aDataGirdRet', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 		$contador   = count($aDataGrid);
 		//$oReturn->alert('ret '.$contador);
 		unset($aDatos);
 		if ($contador > 1) {
-			unset($aDataGrid[$id_ret]);
+			$id_ret_index = grid_index_by_id($aDataGrid, $aLabelGrid[0], $id_ret);
+			if ($id_ret_index !== null) {
+				unset($aDataGrid[$id_ret_index]);
+			} else {
+				$oReturn->alert('No se pudo eliminar la retencion relacionada. Actualice la lista e intente nuevamente.');
+			}
 			$aDataGrid = array_values($aDataGrid);
-			$cont = 0;
-			foreach ($aDataGrid as $aValues) {
-				$aux = 0;
-				foreach ($aValues as $aVal) {
-					if ($aux == 0) {
-						$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . ($cont + 1) . '</div>';
-					} elseif ($aux == 16) {
-						$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="center">
-																	<img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/pencil.png"
-																	title = "Presione aqui para Eliminar"
-																	style="cursor: hand !important; cursor: pointer !important;"
-																	onclick="javascript:xajax_elimina_detalle_dir(' . $cont . ', ' . $idempresa . ', ' . $idsucursal . ');"
-																	alt="Eliminar"
-																	align="bottom" />
-																</div>';
-					} else
-						$aDatos[$cont][$aLabelGrid[$aux]] = $aVal;
-					$aux++;
-				}
-				$cont++;
+			foreach ($aDataGrid as $idx => $row) {
+				$aDataGrid[$idx][$aLabelGrid[0]] = $idx;
 			}
 
-			$_SESSION['aDataGirdRet'] = $aDatos;
+			session_grid_set('aDataGirdRet', $aDataGrid, isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 			$sHtml = mostrar_grid_ret($idempresa, $idsucursal);
 			$oReturn->assign("divRet", "innerHTML", $sHtml);
 		} else {
 			unset($aDataGrid[0]);
-			$_SESSION['aDataGirdRet'] = $aDatos;
+			session_grid_set('aDataGirdRet', array(), isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 			$sHtml = "";
 			$oReturn->assign("divRet", "innerHTML", $sHtml);
 		}
@@ -2862,7 +2861,7 @@ function agrega_modifica_grid_dia($nTipo = 0, $aForm = '', $id = '')
 	$oIfx->DSN = $DSN_Ifx;
 	$oIfx->Conectar();
 
-	$aDataDiar = $_SESSION['aDataGirdDiar'];
+	$aDataDiar = session_grid_get('aDataGirdDiar', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 
 	$aLabelDiar = array(
 		'Fila', 				'Cuenta', 				'Nombre', 		'Documento', 		'Cotizacion',
@@ -3018,7 +3017,7 @@ function agrega_modifica_grid_dia($nTipo = 0, $aForm = '', $id = '')
 
 			// DIARIO
 			$sHtml = '';
-			$_SESSION['aDataGirdDiar'] = $aDataDiar;
+			session_grid_set('aDataGirdDiar', $aDataDiar, isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 			$sHtml = mostrar_grid_dia($idempresa, $idsucursal);
 			$oReturn->assign("divDiario", "innerHTML", $sHtml);
 
@@ -3117,7 +3116,7 @@ function agrega_modifica_grid_dia_asi_inic($nTipo = 0, $aForm = '', $arrayBal = 
 	$oIfxA->DSN = $DSN_Ifx;
 	$oIfxA->Conectar();
 
-	$aDataDiar = $_SESSION['aDataGirdDiar'];
+	$aDataDiar = session_grid_get('aDataGirdDiar', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 
 	// Decodificar el JSON a un array
 	$array = json_decode($arrayBal, true);
@@ -3500,7 +3499,7 @@ function agrega_modifica_grid_dia_asi_inic($nTipo = 0, $aForm = '', $arrayBal = 
 
 			// DIARIO
 			$sHtml = '';
-			$_SESSION['aDataGirdDiar'] = $aDataDiar;
+			session_grid_set('aDataGirdDiar', $aDataDiar, isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 			$sHtml = mostrar_grid_dia($id_empresa, $idsucursal);
 			$oReturn->assign("divDiario", "innerHTML", $sHtml);
 
@@ -3538,7 +3537,7 @@ function mostrar_grid_dia($idempresa, $idsucursal)
 	$oIfx->Conectar();
 
 	$idempresa  = $_SESSION['U_EMPRESA'];
-	$aDataGrid  = $_SESSION['aDataGirdDiar'];
+	$aDataGrid  = session_grid_get('aDataGirdDiar', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 
 	$aLabelGrid = array(
 		'Fila', 			 'Cuenta', 				'Nombre', 		'Documento', 		'Cotizacion',
@@ -3585,6 +3584,18 @@ function mostrar_grid_dia($idempresa, $idsucursal)
                                                                 alt="Modificar"
                                                                 align="bottom" />
                                                             </div>';
+			} elseif ($aux == 11) {
+				$row_id = isset($aValues[$aLabelGrid[0]]) ? $aValues[$aLabelGrid[0]] : $cont;
+				$dir_id = isset($aValues[$aLabelGrid[14]]) && $aValues[$aLabelGrid[14]] !== '' ? $aValues[$aLabelGrid[14]] : -1;
+				$ret_id = isset($aValues[$aLabelGrid[15]]) && $aValues[$aLabelGrid[15]] !== '' ? $aValues[$aLabelGrid[15]] : -1;
+				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="center">
+                                                                <img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/delete_1.png"
+                                                                title = "Presione aqui para Eliminar"
+                                                                style="cursor: hand !important; cursor: pointer !important;"
+                                                                onclick="javascript:xajax_elimina_detalle_dir(' . $dir_id . ', ' . $idempresa . ', ' . $idsucursal . ', ' . $row_id . ', ' . $ret_id . ');"
+                                                                alt="Eliminar"
+                                                                align="bottom" />
+                                                            </div>';
 			} elseif ($aux == 12) {
 				// CENTRO COSTO 
 				$sql = "select ccosn_cod_ccosn, ( ccosn_nom_ccosn || ' - ' || ccosn_cod_ccosn ) as  ccosn_nom_ccosn from saeccosn where
@@ -3623,18 +3634,29 @@ function elimina_detalle_dia($id = null, $idempresa, $idsucursal)
 		'Debito Moneda Ext', 	'Credito Moneda Ext', 	'Detalle', 		'Modificar', 		'Eliminar', 		'Centro Costo', 			'Centro Actividad'
 	);
 
-	$aDataGrid = $_SESSION['aDataGirdDiar'];
+	$aDataGrid = session_grid_get('aDataGirdDiar', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 	$contador = count($aDataGrid);
 	if ($contador > 1) {
-		unset($aDataGrid[$id]);
-		$_SESSION['aDataGirdDiar'] = $aDataGrid;
-		$sHtml = mostrar_grid_dir($idempresa, $idsucursal);
+		$id_index = grid_index_by_id($aDataGrid, $aLabelDiar[0], $id);
+		if ($id_index !== null) {
+			unset($aDataGrid[$id_index]);
+		} else {
+			$oReturn->alert('No se pudo eliminar el registro. Actualice la lista e intente nuevamente.');
+		}
+		$aDataGrid = array_values($aDataGrid);
+		foreach ($aDataGrid as $idx => $row) {
+			$aDataGrid[$idx][$aLabelDiar[0]] = $idx;
+		}
+		session_grid_set('aDataGirdDiar', $aDataGrid, isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
+		$sHtml = mostrar_grid_dia($idempresa, $idsucursal);
 		$oReturn->assign("divDiario", "innerHTML", $sHtml);
+		$oReturn->script("total_diario();");
 	} else {
 		unset($aDataGrid[0]);
-		$_SESSION['aDataGirdDiar'] = $aDatos;
+		session_grid_set('aDataGirdDiar', array(), isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 		$sHtml = "";
 		$oReturn->assign("divDiario", "innerHTML", $sHtml);
+		$oReturn->script("total_diario();");
 	}
 
 
@@ -3655,8 +3677,8 @@ function agrega_modifica_grid_ret($nTipo = 0, $aForm = '', $id = '')
 	$oIfx->DSN = $DSN_Ifx;
 	$oIfx->Conectar();
 
-	$aDataGrid = $_SESSION['aDataGirdRet'];
-	$aDataDiar = $_SESSION['aDataGirdDiar'];
+	$aDataGrid = session_grid_get('aDataGirdRet', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
+	$aDataDiar = session_grid_get('aDataGirdDiar', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 
 	$aLabelGrid = array(
 		'Fila', 			'Cta Ret', 				'Cliente', 			'Factura', 			'Ret Cliente', 				'Porc(%)', 				'Base Impo',
@@ -3691,7 +3713,7 @@ function agrega_modifica_grid_ret($nTipo = 0, $aForm = '', $id = '')
 	$det_ret   = $aForm["ret_det"];
 	$cta_deb   = $aForm["cta_deb"];
 	$cta_cre   = $aForm["cta_cre"];
-	$tipo      = 'DB';
+	$tipo      = isset($aForm["tipo"]) ? $aForm["tipo"] : '';
 	$clpv_nom  = $aForm["clpv_nom"];
 	$clpv_cod  = $aForm["clpv_cod"];
 	$doc  = $aForm["documento"];
@@ -3719,6 +3741,16 @@ function agrega_modifica_grid_ret($nTipo = 0, $aForm = '', $id = '')
 		$coti = $aForm["cotizacion"];
 	}
 
+	if (empty($tipo)) {
+		if (!empty($cta_cre) && empty($cta_deb)) {
+			$tipo = 'CR';
+		} elseif (!empty($cta_deb) && empty($cta_cre)) {
+			$tipo = 'DB';
+		} else {
+			$tipo = 'DB';
+		}
+	}
+
 	$val_deb   = 0;
 	$val_cre   = 0;
 	if ($tipo == 'CR') {
@@ -3735,6 +3767,11 @@ function agrega_modifica_grid_ret($nTipo = 0, $aForm = '', $id = '')
 		$val_deb = $val_ret;
 	}
 	$cuen_nom = consulta_string_func($sql, 'cuen_nom_cuen', $oIfx, '');
+	$cta_diario = ($tipo == 'CR') ? $cta_cre : $cta_deb;
+	if (empty($cta_diario) || empty($cuen_nom)) {
+		$oReturn->alert('Debe seleccionar una cuenta de retencion valida antes de agregar.');
+		return $oReturn;
+	}
 
 	if ($nTipo == 0) {
 		// RETENCION
@@ -3764,10 +3801,10 @@ function agrega_modifica_grid_ret($nTipo = 0, $aForm = '', $id = '')
 				$deb_tmp = round(($val_deb / $coti), 2);
 			}
 
-			$aDataGrid[$cont][$aLabelGrid[12]] = 0;
+			$aDataGrid[$cont][$aLabelGrid[12]] = $val_deb;
 			$aDataGrid[$cont][$aLabelGrid[13]] = $val_cre;
-			$aDataGrid[$cont][$aLabelGrid[14]] = $val_ret;
-			$aDataGrid[$cont][$aLabelGrid[15]] = 0;
+			$aDataGrid[$cont][$aLabelGrid[14]] = $deb_tmp;
+			$aDataGrid[$cont][$aLabelGrid[15]] = $cre_tmp;
 		} else {
 			// moneda extra
 
@@ -3775,7 +3812,7 @@ function agrega_modifica_grid_ret($nTipo = 0, $aForm = '', $id = '')
 			$aDataGrid[$cont][$aLabelGrid[13]] = $val_cre * $coti;
 
 			$aDataGrid[$cont][$aLabelGrid[14]] = $val_deb;
-			$aDataGrid[$cont][$aLabelGrid[15]] = 0;
+			$aDataGrid[$cont][$aLabelGrid[15]] = $val_cre;
 		}
 
 		$contd = count($aDataDiar);
@@ -3793,7 +3830,7 @@ function agrega_modifica_grid_ret($nTipo = 0, $aForm = '', $id = '')
 
 		// DIARIO
 		$aDataDiar[$contd][$aLabelDiar[0]] = floatval($contd);
-		$aDataDiar[$contd][$aLabelDiar[1]] = $cta_cre . $cta_deb;
+		$aDataDiar[$contd][$aLabelDiar[1]] = $cta_diario;
 		$aDataDiar[$contd][$aLabelDiar[2]] = $cuen_nom;
 		$aDataDiar[$contd][$aLabelDiar[3]] = $doc;
 		$aDataDiar[$contd][$aLabelDiar[4]] = $coti;
@@ -3813,13 +3850,13 @@ function agrega_modifica_grid_ret($nTipo = 0, $aForm = '', $id = '')
 			$aDataDiar[$contd][$aLabelDiar[5]] = $val_deb;
 			$aDataDiar[$contd][$aLabelDiar[6]] = $val_cre;
 			$aDataDiar[$contd][$aLabelDiar[7]] = $deb_tmp;
-			$aDataDiar[$contd][$aLabelDiar[8]] = 0;
+			$aDataDiar[$contd][$aLabelDiar[8]] = $cre_tmp;
 		} else {
 			// moneda extra
 			$aDataDiar[$contd][$aLabelDiar[5]] = $val_deb * $coti;
 			$aDataDiar[$contd][$aLabelDiar[6]] = $val_cre * $coti;
 			$aDataDiar[$contd][$aLabelDiar[7]] = $val_deb;
-			$aDataDiar[$contd][$aLabelDiar[8]] = 0;
+			$aDataDiar[$contd][$aLabelDiar[8]] = $val_cre;
 		}
 
 		$vacio = '-1';
@@ -3838,13 +3875,13 @@ function agrega_modifica_grid_ret($nTipo = 0, $aForm = '', $id = '')
 	}
 
 	// RETENCION
-	$_SESSION['aDataGirdRet'] = $aDataGrid;
+	session_grid_set('aDataGirdRet', $aDataGrid, isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 	$sHtml = mostrar_grid_ret($idempresa, $idsucursal);
 	$oReturn->assign("divRet", "innerHTML", $sHtml);
 
 	// DIARIO
 	$sHtml = '';
-	$_SESSION['aDataGirdDiar'] = $aDataDiar;
+	session_grid_set('aDataGirdDiar', $aDataDiar, isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 	$sHtml = mostrar_grid_dia($idempresa, $idsucursal);
 	$oReturn->assign("divDiario", "innerHTML", $sHtml);
 
@@ -3875,7 +3912,7 @@ function mostrar_grid_ret($idempresa, $idsucursal)
 	$oIfx->DSN = $DSN_Ifx;
 	$oIfx->Conectar();
 
-	$aDataGrid  = $_SESSION['aDataGirdRet'];
+	$aDataGrid  = session_grid_get('aDataGirdRet', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 	$aLabelGrid = array(
 		'Fila', 			'Cta Ret', 				'Cliente', 			'Factura', 			'Ret Cliente', 				'Porc(%)', 				'Base Impo',
 		'Valor', 			'N.- Retencion', 		'Detalle', 	 		'Origen', 			'Cotizacion',  				'Debito Moneda Local', 'Credito Monda Local',
@@ -3886,9 +3923,11 @@ function mostrar_grid_ret($idempresa, $idsucursal)
 	$cont    = 0;
 	$tot_cre = 0;
 	$tot_deb = 0;
-	foreach ($aDataGrid as $aValues) {
-		$aux     = 0;
-		foreach ($aValues as $aVal) {
+		foreach ($aDataGrid as $aValues) {
+			$aux     = 0;
+			$id_di = null;
+			$row_id = isset($aValues[$aLabelGrid[0]]) ? $aValues[$aLabelGrid[0]] : $cont;
+			foreach ($aValues as $aVal) {
 			if ($aux == 0) {
 				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . ($cont + 1) . '</div>';
 			} elseif ($aux == 2) {
@@ -3923,15 +3962,21 @@ function mostrar_grid_ret($idempresa, $idsucursal)
 				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . number_format(round($aVal, 2), 2, '.', ',') . '</div>';
 			} elseif ($aux == 15) {		// credito exy
 				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . number_format(round($aVal, 2), 2, '.', ',') . '</div>';
-			} elseif ($aux == 16) {
-				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="center">
-                                                                <img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/pencil.png"
+				} elseif ($aux == 17) {
+					if ($id_di === null && isset($aValues[$aLabelGrid[18]])) {
+						$id_di = $aValues[$aLabelGrid[18]];
+					}
+					$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="center">
+                                                                <img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/delete_1.png"
                                                                 title = "Presione aqui para Eliminar"
                                                                 style="cursor: hand !important; cursor: pointer !important;"
-                                                                onclick="javascript:xajax_elimina_detalle_ret(' . $cont . ', ' . $idempresa . ', ' . $idsucursal . ');"
+                                                                onclick="javascript:xajax_elimina_detalle_ret(' . $row_id . ', ' . $idempresa . ', ' . $idsucursal . ', ' . $id_di . ');"
                                                                 alt="Eliminar"
                                                                 align="bottom" />
                                                             </div>';
+			} elseif ($aux == 18) {
+				$id_di = $aVal;
+				$aDatos[$cont][$aLabelGrid[$aux]] = $aVal;
 			} else
 				$aDatos[$cont][$aLabelGrid[$aux]] = $aVal;
 			$aux++;
@@ -3960,41 +4005,27 @@ function elimina_detalle_ret($id = null, $idempresa, $idsucursal, $id_di)
 		'Modificar', 		'Eliminar',				'DI'
 	);
 
-	$aDataGrid = $_SESSION['aDataGirdRet'];
+	$aDataGrid = session_grid_get('aDataGirdRet', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 
 	$contador = count($aDataGrid);
 	if ($contador > 1) {
-		unset($aDataGrid[$id]);
+		$id_index = grid_index_by_id($aDataGrid, $aLabelGrid[0], $id);
+		if ($id_index !== null) {
+			unset($aDataGrid[$id_index]);
+		} else {
+			$oReturn->alert('No se pudo eliminar la retencion. Actualice la lista e intente nuevamente.');
+		}
 		$aDataGrid = array_values($aDataGrid);
-		$cont 	   = 0;
-
-		foreach ($aDataGrid as $aValues) {
-			$aux     = 0;
-			foreach ($aValues as $aVal) {
-				if ($aux == 0) {
-					$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . ($cont + 1) . '</div>';
-				} elseif ($aux == 16) {
-					$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="center">
-																			<img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/pencil.png"
-																			title = "Presione aqui para Eliminar"
-																			style="cursor: hand !important; cursor: pointer !important;"
-																			onclick="javascript:xajax_elimina_detalle_ret(' . $cont . ', ' . $idempresa . ', ' . $idsucursal . ');"
-																			alt="Eliminar"
-																			align="bottom" />
-																		</div>';
-				} else
-					$aDatos[$cont][$aLabelGrid[$aux]] = $aVal;
-				$aux++;
-			}
-			$cont++;
+		foreach ($aDataGrid as $idx => $row) {
+			$aDataGrid[$idx][$aLabelGrid[0]] = $idx;
 		}
 
-		$_SESSION['aDataGirdRet'] = $aDatos;
+		session_grid_set('aDataGirdRet', $aDataGrid, isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 		$sHtml = mostrar_grid_ret($idempresa, $idsucursal);
 		$oReturn->assign("divRet", "innerHTML", $sHtml);
 	} else {
 		unset($aDataGrid[0]);
-		$_SESSION['aDataGirdRet'] = $aDatos;
+		session_grid_set('aDataGirdRet', array(), isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 		$sHtml = "";
 		$oReturn->assign("divRet", "innerHTML", $sHtml);
 	}
@@ -4009,42 +4040,29 @@ function elimina_detalle_ret($id = null, $idempresa, $idsucursal, $id_di)
 
 	unset($aDataGrid);
 	$contador   = 0;
-	$aDataGrid  = $_SESSION['aDataGirdDiar'];
+	$aDataGrid  = session_grid_get('aDataGirdDiar', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 	$contador   = count($aDataGrid);
 	unset($aDatos);
-	if ($contador > 1) {
-		unset($aDataGrid[$id_di]);
-		$aDataGrid = array_values($aDataGrid);
-		$cont = 0;
-		foreach ($aDataGrid as $aValues) {
-			$aux = 0;
-			foreach ($aValues as $aVal) {
-				if ($aux == 0) {
-					$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . ($cont + 1) . '</div>';
-				} elseif ($aux == 10) {
-					$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="center">
-                                                                <img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/pencil.png"
-                                                                title = "Presione aqui para Eliminar"
-                                                                style="cursor: hand !important; cursor: pointer !important;"
-                                                                onclick="javascript:xajax_elimina_detalle_dir(' . $cont . ', ' . $idempresa . ', ' . $idsucursal . ');"
-                                                                alt="Eliminar"
-                                                                align="bottom" />
-                                                            </div>';
-				} else
-					$aDatos[$cont][$aLabelGrid[$aux]] = $aVal;
-				$aux++;
+		if ($contador > 1) {
+			$id_di_index = grid_index_by_id($aDataGrid, $aLabelGrid[0], $id_di);
+			if ($id_di_index !== null) {
+				unset($aDataGrid[$id_di_index]);
+			} else {
+				$oReturn->alert('No se pudo eliminar el diario relacionado. Actualice la lista e intente nuevamente.');
 			}
-			$cont++;
-		}
+			$aDataGrid = array_values($aDataGrid);
+			foreach ($aDataGrid as $idx => $row) {
+				$aDataGrid[$idx][$aLabelGrid[0]] = $idx;
+			}
 
-		$_SESSION['aDataGirdDiar'] = $aDatos;
-		$sHtml = mostrar_grid_dia($idempresa, $idsucursal);
-		$oReturn->assign("divDiario", "innerHTML", $sHtml);
-	} else {
-		unset($aDataGrid[0]);
-		$_SESSION['aDataGirdDiar'] = $aDatos;
-		$sHtml = "";
-		$oReturn->assign("divDiario", "innerHTML", $sHtml);
+			session_grid_set('aDataGirdDiar', $aDataGrid, isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
+			$sHtml = mostrar_grid_dia($idempresa, $idsucursal);
+			$oReturn->assign("divDiario", "innerHTML", $sHtml);
+		} else {
+			unset($aDataGrid[0]);
+			session_grid_set('aDataGirdDiar', array(), isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
+			$sHtml = "";
+			$oReturn->assign("divDiario", "innerHTML", $sHtml);
 	}
 
 	// TOTAL DIARIO
@@ -4081,9 +4099,9 @@ function guardar($aForm = '', $factcheq = '', $lisfact = '', $codModu='')
 	//variables de session
 	$user_web     = $_SESSION['U_ID'];
 	$user_ifx     = $_SESSION['U_USER_INFORMIX'];
-	$aDataGrid    = $_SESSION['aDataGirdDir'];
-	$aDataDiar    = $_SESSION['aDataGirdDiar'];
-	$aDataGridRet = $_SESSION['aDataGirdRet'];
+	$aDataGrid    = session_grid_get('aDataGirdDir', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
+	$aDataDiar    = session_grid_get('aDataGirdDiar', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
+	$aDataGridRet = session_grid_get('aDataGirdRet', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 
 	//variables de formulario
 	$moduloComp = 5;
@@ -4594,17 +4612,25 @@ function guardar($aForm = '', $factcheq = '', $lisfact = '', $codModu='')
 
 			//ACTUALIZAICON ASIENTO INICIAL 
 
-			if(!empty($codModu)){
-				$sqla="update saeejer set ejer_asi_inic = '$secu_asto' where ejer_cod_ejer=$idejer and ejer_cod_empr=$idempresa";
-				$oIfx->QueryT($sqla);
-			}
+				if(!empty($codModu)){
+					$sqla="update saeejer set ejer_asi_inic = '$secu_asto' where ejer_cod_ejer=$idejer and ejer_cod_empr=$idempresa";
+					$oIfx->QueryT($sqla);
+				}
 
-			$oIfx->QueryT('COMMIT WORK;');
-			$oReturn->alert('Ingresado Correctamente...');
+				$oIfx->QueryT('COMMIT WORK;');
+				session_grid_unset('aDataGirdDir', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
+				session_grid_unset('aDataGirdDiar', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
+				session_grid_unset('aDataGirdRet', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
+				$oReturn->alert('Ingresado Correctamente...');
 		} catch (Exception $e) {
 			// rollback
 			$oIfx->QueryT('ROLLBACK WORK;');
-			$oReturn->alert($e->getMessage());
+			$error = $e->getMessage();
+			if (stripos($error, 'descuadrado') !== false) {
+				$oReturn->alert('El asiento esta descuadrado. Revise debitos y creditos antes de guardar.');
+			} else {
+				$oReturn->alert('No se pudo guardar el diario. Revise cuentas, retenciones y campos obligatorios.');
+			}
 			$oReturn->assign("ctrl", "value", 1);
 			$oReturn->script('habilitar_boton();');
 		}
@@ -4657,7 +4683,7 @@ function total_diario($aForm = '')
 
 	$oReturn    = new xajaxResponse();
 
-	$aDataGrid  = $_SESSION['aDataGirdDiar'];
+	$aDataGrid  = session_grid_get('aDataGirdDiar', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 
 	$idempresa  = $aForm["empresa"];
 	$mone_cod   = $aForm["moneda"];
@@ -5271,7 +5297,7 @@ function agrega_modifica_grid_dia_empl($nTipo = 0, $aForm = '', $idempresa = '',
 	$oIfx->DSN = $DSN_Ifx;
 	$oIfx->Conectar();
 
-	$aDataDiar = $_SESSION['aDataGirdDiar'];
+	$aDataDiar = session_grid_get('aDataGirdDiar', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 
 	$aLabelDiar = array(
 		'Fila', 				'Cuenta', 					'Nombre', 				'Documento', 			'Cotizacion',
@@ -5387,7 +5413,7 @@ function agrega_modifica_grid_dia_empl($nTipo = 0, $aForm = '', $idempresa = '',
 
 	// DIARIO
 	$sHtml = '';
-	$_SESSION['aDataGirdDiar'] = $aDataDiar;
+	session_grid_set('aDataGirdDiar', $aDataDiar, isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 	$sHtml = mostrar_grid_dia($idempresa, $idsucursal);
 	$oReturn->assign("divDiario", "innerHTML", $sHtml);
 
@@ -5570,7 +5596,7 @@ function form_modificar_valor($id, $idempresa, $idsucursal, $aForm = '')
 	$sql      = "select pcon_mon_base from saepcon where pcon_cod_empr = $idempresa ";
 	$mone_base = consulta_string_func($sql, 'pcon_mon_base', $oIfx, '');
 
-	$aDataGrid  = $_SESSION['aDataGirdDiar'];
+	$aDataGrid  = session_grid_get('aDataGirdDiar', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 
 	/*	
 	'Debito Moneda Local', 		'Credito Moneda Local', 
@@ -5647,7 +5673,7 @@ function modificar_valor($id, $opcion, $aForm = '')
 
 	$oReturn = new xajaxResponse();
 
-	$aDataGrid  = $_SESSION['aDataGirdDiar'];
+	$aDataGrid  = session_grid_get('aDataGirdDiar', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 	$aLabelDiar = array(
 		'Fila', 			 'Cuenta', 				'Nombre', 		'Documento', 		'Cotizacion',
 		'Debito Moneda Local', 		'Credito Moneda Local',
@@ -5672,7 +5698,7 @@ function modificar_valor($id, $opcion, $aForm = '')
 	}
 
 	$sHtml = '';
-	$_SESSION['aDataGirdDiar'] = $aDataGrid;
+	session_grid_set('aDataGirdDiar', $aDataGrid, isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 	$sHtml = mostrar_grid_dia($idempresa, $idsucursal);
 	$oReturn->assign("divDiario", "innerHTML", $sHtml);
 
@@ -6005,7 +6031,7 @@ function procesar_distri($aForm = '')
 	$fu = new Formulario;
 	$fu->DSN = $DSN;
 
-	$aDataDiar = $_SESSION['aDataGirdDiar'];
+	$aDataDiar = session_grid_get('aDataGirdDiar', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 	$array_ccosn  = $_SESSION['U_ARRAY_CCOSN'];
 	$act_cod    = $aForm["actividad"];
 
@@ -6116,7 +6142,7 @@ function procesar_distri($aForm = '')
 
 	// DIARIO
 	$sHtml = '';
-	$_SESSION['aDataGirdDiar'] = $aDataDiar;
+	session_grid_set('aDataGirdDiar', $aDataDiar, isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 	$sHtml = mostrar_grid_dia($idempresa, $idsucursal);
 	$oReturn->assign("divDiario", "innerHTML", $sHtml);
 
