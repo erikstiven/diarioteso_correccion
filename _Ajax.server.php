@@ -31,6 +31,16 @@ function session_grid_unset($base, $idempresa = null, $idsucursal = null)
 	unset($_SESSION[$key]);
 }
 
+function grid_index_by_id($grid, $label, $id)
+{
+	foreach ($grid as $index => $row) {
+		if (isset($row[$label]) && (string)$row[$label] === (string)$id) {
+			return $index;
+		}
+	}
+	return null;
+}
+
 /*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 // S E R V I D O R   A J A X //
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
@@ -2646,8 +2656,9 @@ function mostrar_grid_dir($idempresa, $idsucursal)
 			$aux     = 0;
 			$id_di = null;
 			foreach ($aValues as $aVal) {
-				if ($aux == 0) {
-					$aDatos[$cont][$aLabelGrid[$aux]] = ($cont + 1);
+			if ($aux == 0) {
+				$row_id = isset($aValues[$aLabelGrid[$aux]]) ? $aValues[$aLabelGrid[$aux]] : $cont;
+				$aDatos[$cont][$aLabelGrid[$aux]] = ($cont + 1);
 				} elseif ($aux == 1) {
 				$sql = "select  clpv_nom_clpv from saeclpv where clpv_cod_clpv = $aVal and clpv_cod_empr = $idempresa";
 				$clpv_nom = consulta_string_func($sql, 'clpv_nom_clpv', $oIfx, '');
@@ -2681,14 +2692,14 @@ function mostrar_grid_dir($idempresa, $idsucursal)
 				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . number_format(round($aVal, 2), 2, '.', ',') . '</div>';
 				} elseif ($aux == 11) {
 					$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . number_format(round($aVal, 2), 2, '.', ',') . '</div>';
-				} elseif ($aux == 12) {
-					if ($id_di === null && isset($aValues[$aLabelGrid[14]])) {
-						$id_di = $aValues[$aLabelGrid[14]];
-					}
-					$aDatos[$cont][$aLabelGrid[$aux]] = '<img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/delete.png"
+			} elseif ($aux == 12) {
+				if ($id_di === null && isset($aValues[$aLabelGrid[14]])) {
+					$id_di = $aValues[$aLabelGrid[14]];
+				}
+				$aDatos[$cont][$aLabelGrid[$aux]] = '<img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/delete.png"
 															title = "Presione aqui para Eliminar"
 															style="cursor:pointer; width:20px; height:20px; margin:auto; display:block;"
-															onclick="javascript:xajax_elimina_detalle_dir(' . $cont . ', ' . $idempresa . ', ' . $idsucursal . ', ' . $id_di . ');"
+															onclick="javascript:xajax_elimina_detalle_dir(' . $row_id . ', ' . $idempresa . ', ' . $idsucursal . ', ' . $id_di . ');"
 															alt="Eliminar"
 															align="bottom" />';
 				} elseif ($aux == 14) {
@@ -2731,7 +2742,10 @@ function elimina_detalle_dir($id = null, $idempresa, $idsucursal, $id_di = '', $
 	$contador  = count($aDataGrid);
 	//$oReturn->alert('DIR '.$contador);
 	if ($contador > 1) {
-		unset($aDataGrid[$id]);
+		$id_index = grid_index_by_id($aDataGrid, $aLabelGrid[0], $id);
+		if ($id_index !== null) {
+			unset($aDataGrid[$id_index]);
+		}
 		$aDataGrid = array_values($aDataGrid);
 		$cont 	   = 0;
 
@@ -2785,7 +2799,10 @@ function elimina_detalle_dir($id = null, $idempresa, $idsucursal, $id_di = '', $
 	//$oReturn->alert('DI '.$contador);
 	unset($aDatos);
 	if ($contador > 1) {
-		unset($aDataGrid[$id_di]);
+		$id_di_index = grid_index_by_id($aDataGrid, $aLabelDiar[0], $id_di);
+		if ($id_di_index !== null) {
+			unset($aDataGrid[$id_di_index]);
+		}
 		$aDataGrid = array_values($aDataGrid);
 		$cont = 0;
 		foreach ($aDataGrid as $aValues) {
@@ -2836,7 +2853,10 @@ function elimina_detalle_dir($id = null, $idempresa, $idsucursal, $id_di = '', $
 		//$oReturn->alert('ret '.$contador);
 		unset($aDatos);
 		if ($contador > 1) {
-			unset($aDataGrid[$id_ret]);
+			$id_ret_index = grid_index_by_id($aDataGrid, $aLabelGrid[0], $id_ret);
+			if ($id_ret_index !== null) {
+				unset($aDataGrid[$id_ret_index]);
+			}
 			$aDataGrid = array_values($aDataGrid);
 			$cont = 0;
 			foreach ($aDataGrid as $aValues) {
@@ -3656,7 +3676,10 @@ function elimina_detalle_dia($id = null, $idempresa, $idsucursal)
 	$aDataGrid = session_grid_get('aDataGirdDiar', isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 	$contador = count($aDataGrid);
 	if ($contador > 1) {
-		unset($aDataGrid[$id]);
+		$id_index = grid_index_by_id($aDataGrid, $aLabelDiar[0], $id);
+		if ($id_index !== null) {
+			unset($aDataGrid[$id_index]);
+		}
 		session_grid_set('aDataGirdDiar', $aDataGrid, isset($idempresa) ? $idempresa : null, isset($idsucursal) ? $idsucursal : null);
 		$sHtml = mostrar_grid_dia($idempresa, $idsucursal);
 		$oReturn->assign("divDiario", "innerHTML", $sHtml);
@@ -3967,12 +3990,12 @@ function mostrar_grid_ret($idempresa, $idsucursal)
 				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . number_format(round($aVal, 2), 2, '.', ',') . '</div>';
 			} elseif ($aux == 15) {		// credito exy
 				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . number_format(round($aVal, 2), 2, '.', ',') . '</div>';
-			} elseif ($aux == 17) {
-				if ($id_di === null && isset($aValues[$aLabelGrid[18]])) {
-					$id_di = $aValues[$aLabelGrid[18]];
-				}
-				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="center">
-                                                                <img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/pencil.png"
+				} elseif ($aux == 17) {
+					if ($id_di === null && isset($aValues[$aLabelGrid[18]])) {
+						$id_di = $aValues[$aLabelGrid[18]];
+					}
+					$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="center">
+                                                                <img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/delete_1.png"
                                                                 title = "Presione aqui para Eliminar"
                                                                 style="cursor: hand !important; cursor: pointer !important;"
                                                                 onclick="javascript:xajax_elimina_detalle_ret(' . $cont . ', ' . $idempresa . ', ' . $idsucursal . ', ' . $id_di . ');"
@@ -4014,7 +4037,10 @@ function elimina_detalle_ret($id = null, $idempresa, $idsucursal, $id_di)
 
 	$contador = count($aDataGrid);
 	if ($contador > 1) {
-		unset($aDataGrid[$id]);
+		$id_index = grid_index_by_id($aDataGrid, $aLabelGrid[0], $id);
+		if ($id_index !== null) {
+			unset($aDataGrid[$id_index]);
+		}
 		$aDataGrid = array_values($aDataGrid);
 		$cont 	   = 0;
 
@@ -4027,7 +4053,7 @@ function elimina_detalle_ret($id = null, $idempresa, $idsucursal, $id_di)
 				} elseif ($aux == 17) {
 					$id_di_ret = isset($aValues[$aLabelGrid[18]]) ? $aValues[$aLabelGrid[18]] : $id_di_ret;
 					$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="center">
-																			<img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/pencil.png"
+																			<img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/delete_1.png"
 																			title = "Presione aqui para Eliminar"
 																			style="cursor: hand !important; cursor: pointer !important;"
 																			onclick="javascript:xajax_elimina_detalle_ret(' . $cont . ', ' . $idempresa . ', ' . $idsucursal . ', ' . $id_di_ret . ');"
