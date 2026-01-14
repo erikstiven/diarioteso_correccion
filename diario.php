@@ -422,6 +422,37 @@
 
 
         function anadir_ret() {
+            var clpv = document.getElementById('clpv_cod').value;
+            var codRet = document.getElementById('cod_ret').value;
+            var factRet = document.getElementById('fact_ret').value;
+            var tranRet = document.getElementById('tran_ret').value;
+            var valorRet = document.getElementById('valor_retenido').value;
+
+            if (clpv === '') {
+                alert('Seleccione un beneficiario para continuar.');
+                return;
+            }
+
+            if (codRet === '') {
+                alert('Seleccione un código de retención para continuar.');
+                return;
+            }
+
+            if (factRet === '') {
+                alert('Seleccione una factura para continuar.');
+                return;
+            }
+
+            if (tranRet === '') {
+                alert('Seleccione un tipo de transacción para continuar.');
+                return;
+            }
+
+            if (valorRet === '') {
+                alert('Ingrese un valor de retención para continuar.');
+                return;
+            }
+
             var editId = document.getElementById('ret_edit_idx').value;
             if (editId !== '') {
                 xajax_agrega_modifica_grid_ret(1, xajax.getFormValues("form1"), editId);
