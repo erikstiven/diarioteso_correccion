@@ -541,6 +541,25 @@
 
 
         function anadir_dir() {
+            var tran = document.getElementById('tran').value;
+            var clpv = document.getElementById('clpv_cod').value;
+            var detalle = document.getElementById('det_dir').value;
+
+            if (clpv === '') {
+                alert('Seleccione un beneficiario para continuar.');
+                return;
+            }
+
+            if (tran === '') {
+                alert('Seleccione un tipo de transacción para continuar.');
+                return;
+            }
+
+            if (detalle === '') {
+                alert('Ingrese un detalle para continuar.');
+                return;
+            }
+
             xajax_agrega_modifica_grid_dir_ori(0, xajax.getFormValues("form1"));
         }
 
