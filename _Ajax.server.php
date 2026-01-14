@@ -3736,106 +3736,116 @@ function agrega_modifica_grid_ret($nTipo = 0, $aForm = '', $id = '')
 	}
 	$cuen_nom = consulta_string_func($sql, 'cuen_nom_cuen', $oIfx, '');
 
-	if ($nTipo == 0) {
-		// RETENCION
-		$cont = count($aDataGrid);
-		$aDataGrid[$cont][$aLabelGrid[0]] = floatval($cont);
-		$aDataGrid[$cont][$aLabelGrid[1]] = $cod_ret;
-		$aDataGrid[$cont][$aLabelGrid[2]] = $clpv_cod;
-		$aDataGrid[$cont][$aLabelGrid[3]] = $fact_ret;
-		$aDataGrid[$cont][$aLabelGrid[4]] = $clpv_ret;
-		$aDataGrid[$cont][$aLabelGrid[5]] = $porc_ret;
-		$aDataGrid[$cont][$aLabelGrid[6]] = $base_ret;
-		$aDataGrid[$cont][$aLabelGrid[7]] = $val_ret;
-		$aDataGrid[$cont][$aLabelGrid[8]] = $num_ret;
-		$aDataGrid[$cont][$aLabelGrid[9]] = $det_ret;
-		$aDataGrid[$cont][$aLabelGrid[10]] = $origen;
-		$aDataGrid[$cont][$aLabelGrid[11]] = $coti;
+	$cont = ($nTipo == 0) ? count($aDataGrid) : (int)$id;
+	$contd = ($nTipo == 0) ? count($aDataDiar) : (int)($aDataGrid[$cont][$aLabelGrid[18]] ?? 0);
 
-		if ($mone_cod == $mone_base) {
-			// moneda local
-			$cre_tmp = 0;
-			$deb_tmp = 0;
-			if ($coti > 0) {
-				$cre_tmp = round(($val_cre / $coti), 2);
-			}
-
-			if ($coti > 0) {
-				$deb_tmp = round(($val_deb / $coti), 2);
-			}
-
-			$aDataGrid[$cont][$aLabelGrid[12]] = 0;
-			$aDataGrid[$cont][$aLabelGrid[13]] = $val_cre;
-			$aDataGrid[$cont][$aLabelGrid[14]] = $val_ret;
-			$aDataGrid[$cont][$aLabelGrid[15]] = 0;
-		} else {
-			// moneda extra
-
-			$aDataGrid[$cont][$aLabelGrid[12]] = $val_deb * $coti;
-			$aDataGrid[$cont][$aLabelGrid[13]] = $val_cre * $coti;
-
-			$aDataGrid[$cont][$aLabelGrid[14]] = $val_deb;
-			$aDataGrid[$cont][$aLabelGrid[15]] = 0;
-		}
-
+	if (!isset($aDataDiar[$contd])) {
 		$contd = count($aDataDiar);
-		$aDataGrid[$cont][$aLabelGrid[16]] = '';
-		$aDataGrid[$cont][$aLabelGrid[17]] = '<div align="center">
-														<img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/delete_1.png"
-														title = "Presione aqui para Eliminar"
-														style="cursor: hand !important; cursor: pointer !important;"
-														onclick="javascript:xajax_elimina_detalle_ret(' . $cont . ', ' . $idempresa . ', ' . $idsucursal . ', ' . $contd . ');"
-														alt="Eliminar"
-														align="bottom" />
-													</div>';
-		$aDataGrid[$cont][$aLabelGrid[18]] = $contd;
+	}
 
+	// RETENCION
+	$aDataGrid[$cont][$aLabelGrid[0]] = floatval($cont);
+	$aDataGrid[$cont][$aLabelGrid[1]] = $cod_ret;
+	$aDataGrid[$cont][$aLabelGrid[2]] = $clpv_cod;
+	$aDataGrid[$cont][$aLabelGrid[3]] = $fact_ret;
+	$aDataGrid[$cont][$aLabelGrid[4]] = $clpv_ret;
+	$aDataGrid[$cont][$aLabelGrid[5]] = $porc_ret;
+	$aDataGrid[$cont][$aLabelGrid[6]] = $base_ret;
+	$aDataGrid[$cont][$aLabelGrid[7]] = $val_ret;
+	$aDataGrid[$cont][$aLabelGrid[8]] = $num_ret;
+	$aDataGrid[$cont][$aLabelGrid[9]] = $det_ret;
+	$aDataGrid[$cont][$aLabelGrid[10]] = $origen;
+	$aDataGrid[$cont][$aLabelGrid[11]] = $coti;
 
-		// DIARIO
-		$aDataDiar[$contd][$aLabelDiar[0]] = floatval($contd);
-		$aDataDiar[$contd][$aLabelDiar[1]] = $cta_cre . $cta_deb;
-		$aDataDiar[$contd][$aLabelDiar[2]] = $cuen_nom;
-		$aDataDiar[$contd][$aLabelDiar[3]] = $doc;
-		$aDataDiar[$contd][$aLabelDiar[4]] = $coti;
-
-		if ($mone_cod == $mone_base) {
-			// moneda local
-			$cre_tmp = 0;
-			$deb_tmp = 0;
-			if ($coti > 0) {
-				$cre_tmp = round(($val_cre / $coti), 2);
-			}
-
-			if ($coti > 0) {
-				$deb_tmp = round(($val_deb / $coti), 2);
-			}
-
-			$aDataDiar[$contd][$aLabelDiar[5]] = $val_deb;
-			$aDataDiar[$contd][$aLabelDiar[6]] = $val_cre;
-			$aDataDiar[$contd][$aLabelDiar[7]] = $deb_tmp;
-			$aDataDiar[$contd][$aLabelDiar[8]] = 0;
-		} else {
-			// moneda extra
-			$aDataDiar[$contd][$aLabelDiar[5]] = $val_deb * $coti;
-			$aDataDiar[$contd][$aLabelDiar[6]] = $val_cre * $coti;
-			$aDataDiar[$contd][$aLabelDiar[7]] = $val_deb;
-			$aDataDiar[$contd][$aLabelDiar[8]] = 0;
+	if ($mone_cod == $mone_base) {
+		// moneda local
+		$cre_tmp = 0;
+		$deb_tmp = 0;
+		if ($coti > 0) {
+			$cre_tmp = round(($val_cre / $coti), 2);
 		}
 
-		$vacio = '-1';
-		$aDataDiar[$contd][$aLabelDiar[9]] = $det_ret;
-		$aDataDiar[$contd][$aLabelDiar[10]] = '';
-		$aDataDiar[$contd][$aLabelDiar[11]] = '<img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/delete_1.png"
-																	title = "Presione aqui para Eliminar"
-																	style="cursor: hand !important; cursor: pointer !important;"
-																	onclick="javascript:xajax_elimina_detalle_dir(' . $vacio . ', ' . $idempresa . ', ' . $idsucursal . ', ' . $contd . ', ' . $cont . '  );"
-																	alt="Eliminar"
-																	align="bottom" />';
-		$aDataDiar[$contd][$aLabelDiar[12]] = '';
-		$aDataDiar[$contd][$aLabelDiar[13]] = '';
-		$aDataDiar[$contd][$aLabelDiar[14]] = '';
-		$aDataDiar[$contd][$aLabelDiar[15]] = $cont;
+		if ($coti > 0) {
+			$deb_tmp = round(($val_deb / $coti), 2);
+		}
+
+		$aDataGrid[$cont][$aLabelGrid[12]] = 0;
+		$aDataGrid[$cont][$aLabelGrid[13]] = $val_cre;
+		$aDataGrid[$cont][$aLabelGrid[14]] = $val_ret;
+		$aDataGrid[$cont][$aLabelGrid[15]] = 0;
+	} else {
+		// moneda extra
+
+		$aDataGrid[$cont][$aLabelGrid[12]] = $val_deb * $coti;
+		$aDataGrid[$cont][$aLabelGrid[13]] = $val_cre * $coti;
+
+		$aDataGrid[$cont][$aLabelGrid[14]] = $val_deb;
+		$aDataGrid[$cont][$aLabelGrid[15]] = 0;
 	}
+
+	$aDataGrid[$cont][$aLabelGrid[16]] = '<div align="center">
+													<img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/pencil.png"
+													title = "Presione aqui para Modificar"
+													style="cursor: hand !important; cursor: pointer !important;"
+													onclick="javascript:editar_retencion(' . $cont . ', ' . $idempresa . ', ' . $idsucursal . ');"
+													alt="Modificar"
+													align="bottom" />
+												</div>';
+	$aDataGrid[$cont][$aLabelGrid[17]] = '<div align="center">
+													<img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/delete_1.png"
+													title = "Presione aqui para Eliminar"
+													style="cursor: hand !important; cursor: pointer !important;"
+													onclick="javascript:xajax_elimina_detalle_ret(' . $cont . ', ' . $idempresa . ', ' . $idsucursal . ', ' . $contd . ');"
+													alt="Eliminar"
+													align="bottom" />
+												</div>';
+	$aDataGrid[$cont][$aLabelGrid[18]] = $contd;
+
+
+	// DIARIO
+	$aDataDiar[$contd][$aLabelDiar[0]] = floatval($contd);
+	$aDataDiar[$contd][$aLabelDiar[1]] = $cta_cre . $cta_deb;
+	$aDataDiar[$contd][$aLabelDiar[2]] = $cuen_nom;
+	$aDataDiar[$contd][$aLabelDiar[3]] = $doc;
+	$aDataDiar[$contd][$aLabelDiar[4]] = $coti;
+
+	if ($mone_cod == $mone_base) {
+		// moneda local
+		$cre_tmp = 0;
+		$deb_tmp = 0;
+		if ($coti > 0) {
+			$cre_tmp = round(($val_cre / $coti), 2);
+		}
+
+		if ($coti > 0) {
+			$deb_tmp = round(($val_deb / $coti), 2);
+		}
+
+		$aDataDiar[$contd][$aLabelDiar[5]] = $val_deb;
+		$aDataDiar[$contd][$aLabelDiar[6]] = $val_cre;
+		$aDataDiar[$contd][$aLabelDiar[7]] = $deb_tmp;
+		$aDataDiar[$contd][$aLabelDiar[8]] = 0;
+	} else {
+		// moneda extra
+		$aDataDiar[$contd][$aLabelDiar[5]] = $val_deb * $coti;
+		$aDataDiar[$contd][$aLabelDiar[6]] = $val_cre * $coti;
+		$aDataDiar[$contd][$aLabelDiar[7]] = $val_deb;
+		$aDataDiar[$contd][$aLabelDiar[8]] = 0;
+	}
+
+	$vacio = '-1';
+	$aDataDiar[$contd][$aLabelDiar[9]] = $det_ret;
+	$aDataDiar[$contd][$aLabelDiar[10]] = '';
+	$aDataDiar[$contd][$aLabelDiar[11]] = '<img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/delete_1.png"
+																title = "Presione aqui para Eliminar"
+																style="cursor: hand !important; cursor: pointer !important;"
+																onclick="javascript:xajax_elimina_detalle_dir(' . $vacio . ', ' . $idempresa . ', ' . $idsucursal . ', ' . $contd . ', ' . $cont . '  );"
+																alt="Eliminar"
+																align="bottom" />';
+	$aDataDiar[$contd][$aLabelDiar[12]] = '';
+	$aDataDiar[$contd][$aLabelDiar[13]] = '';
+	$aDataDiar[$contd][$aLabelDiar[14]] = '';
+	$aDataDiar[$contd][$aLabelDiar[15]] = $cont;
 
 	// RETENCION
 	$_SESSION['aDataGirdRet'] = $aDataGrid;
@@ -3887,61 +3897,89 @@ function mostrar_grid_ret($idempresa, $idsucursal)
 	$tot_cre = 0;
 	$tot_deb = 0;
 	foreach ($aDataGrid as $aValues) {
-		$aux     = 0;
-		foreach ($aValues as $aVal) {
+		$aux = 0;
+		foreach ($aLabelGrid as $label) {
+			$aVal = $aValues[$label] ?? '';
 			if ($aux == 0) {
-				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . ($cont + 1) . '</div>';
+				$aDatos[$cont][$label] = '<div align="right">' . ($cont + 1) . '</div>';
 			} elseif ($aux == 2) {
 				$sql = "select  clpv_nom_clpv from saeclpv where clpv_cod_clpv = $aVal and clpv_cod_empr = $idempresa ";
 				$clpv_nom = consulta_string_func($sql, 'clpv_nom_clpv', $oIfx, '');
-				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="left">' . $clpv_nom . '</div>';
+				$aDatos[$cont][$label] = '<div align="left">' . $clpv_nom . '</div>';
 			} elseif ($aux == 3) {
-				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="left">' . $aVal . '</div>';
+				$aDatos[$cont][$label] = '<div align="left">' . $aVal . '</div>';
 			} elseif ($aux == 4) {
-				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="left">' . $aVal . '</div>';
+				$aDatos[$cont][$label] = '<div align="left">' . $aVal . '</div>';
 			} elseif ($aux == 5) {
-				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . $aVal . '</div>';
+				$aDatos[$cont][$label] = '<div align="right">' . $aVal . '</div>';
 			} elseif ($aux == 6) {
-				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . number_format(round($aVal, 2), 2, '.', ',') . '</div>';
+				$aDatos[$cont][$label] = '<div align="right">' . number_format(round($aVal, 2), 2, '.', ',') . '</div>';
 			} elseif ($aux == 7) {
-				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . number_format(round($aVal, 2), 2, '.', ',') . '</div>';
+				$aDatos[$cont][$label] = '<div align="right">' . number_format(round($aVal, 2), 2, '.', ',') . '</div>';
 			} elseif ($aux == 8) {
-				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . $aVal . '</div>';
+				$aDatos[$cont][$label] = '<div align="right">' . $aVal . '</div>';
 			} elseif ($aux == 9) {
-				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="left">' . $aVal . '</div>';
+				$aDatos[$cont][$label] = '<div align="left">' . $aVal . '</div>';
 			} elseif ($aux == 10) {
-				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . $aVal . '</div>';
+				$aDatos[$cont][$label] = '<div align="right">' . $aVal . '</div>';
 			} elseif ($aux == 11) {	//  cotizacion	
-				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . number_format(round($aVal, 2), 2, '.', ',') . '</div>';
+				$aDatos[$cont][$label] = '<div align="right">' . number_format(round($aVal, 2), 2, '.', ',') . '</div>';
 			} elseif ($aux == 12) {		// debito local
-				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . number_format(round($aVal, 2), 2, '.', ',') . '</div>';
+				$aDatos[$cont][$label] = '<div align="right">' . number_format(round($aVal, 2), 2, '.', ',') . '</div>';
 				$tot_deb += $aVal;
 			} elseif ($aux == 13) {		// credito local
-				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . number_format(round($aVal, 2), 2, '.', ',') . '</div>';
+				$aDatos[$cont][$label] = '<div align="right">' . number_format(round($aVal, 2), 2, '.', ',') . '</div>';
 				$tot_cre += $aVal;
 			} elseif ($aux == 14) {		// debito extr
-				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . number_format(round($aVal, 2), 2, '.', ',') . '</div>';
+				$aDatos[$cont][$label] = '<div align="right">' . number_format(round($aVal, 2), 2, '.', ',') . '</div>';
 			} elseif ($aux == 15) {		// credito exy
-				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="right">' . number_format(round($aVal, 2), 2, '.', ',') . '</div>';
-			} elseif ($aux == 16) {
-				$aDatos[$cont][$aLabelGrid[$aux]] = '<div align="center">
-                                                                <img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/pencil.png"
-                                                                title = "Presione aqui para Eliminar"
-                                                                style="cursor: hand !important; cursor: pointer !important;"
-                                                                onclick="javascript:xajax_elimina_detalle_ret(' . $cont . ', ' . $idempresa . ', ' . $idsucursal . ');"
-                                                                alt="Eliminar"
-                                                                align="bottom" />
-                                                            </div>';
-			} else
-				$aDatos[$cont][$aLabelGrid[$aux]] = $aVal;
+				$aDatos[$cont][$label] = '<div align="right">' . number_format(round($aVal, 2), 2, '.', ',') . '</div>';
+			} else {
+				$aDatos[$cont][$label] = $aVal;
+			}
 			$aux++;
 		}
 		$cont++;
 	}
 
-	$array = array('', '', '', '', '', '', '', '', '', '', '', $tot_deb, $tot_cre, '', '');
+	$array = array_fill(0, count($aLabelGrid), '');
+	$array[12] = $tot_deb;
+	$array[13] = $tot_cre;
 	//return 'assas'.count($aDatos);
 	return genera_grid($aDatos,   $aLabelGrid,   'RETENCION',   99,   '', $array);
+}
+
+function cargar_retencion($id, $idempresa, $idsucursal)
+{
+	if (session_status() !== PHP_SESSION_ACTIVE) {
+		session_start();
+	}
+
+	$oReturn = new xajaxResponse();
+	$aDataGrid = $_SESSION['aDataGirdRet'];
+	if (!isset($aDataGrid[$id])) {
+		return $oReturn;
+	}
+
+	$aLabelGrid = array(
+		'Fila', 			'Cta Ret', 				'Cliente', 			'Factura', 			'Ret Cliente', 				'Porc(%)', 				'Base Impo',
+		'Valor', 			'N.- Retencion', 		'Detalle', 	 		'Origen', 			'Cotizacion',  				'Debito Moneda Local', 'Credito Monda Local',
+		'Debito Moneda Ext', 'Credito Moneda Ext', 	'Modificar', 		'Eliminar',			'DI'
+	);
+
+	$row = $aDataGrid[$id];
+	$oReturn->assign("cod_ret", "value", $row[$aLabelGrid[1]] ?? '');
+	$oReturn->assign("fact_ret", "value", $row[$aLabelGrid[3]] ?? '');
+	$oReturn->assign("ret_clpv", "value", $row[$aLabelGrid[4]] ?? '');
+	$oReturn->assign("ret_porc", "value", $row[$aLabelGrid[5]] ?? '');
+	$oReturn->assign("ret_base", "value", $row[$aLabelGrid[6]] ?? '');
+	$oReturn->assign("valor_retenido", "value", $row[$aLabelGrid[7]] ?? '');
+	$oReturn->assign("ret_num", "value", $row[$aLabelGrid[8]] ?? '');
+	$oReturn->assign("ret_det", "value", $row[$aLabelGrid[9]] ?? '');
+	$oReturn->assign("origen", "value", $row[$aLabelGrid[10]] ?? '');
+	$oReturn->assign("ret_edit_idx", "value", $id);
+
+	return $oReturn;
 }
 
 function elimina_detalle_ret($id = null, $idempresa, $idsucursal, $id_di)

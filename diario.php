@@ -15,7 +15,27 @@
     <link rel="stylesheet" href="<?= $_COOKIE["JIREH_INCLUDE"] ?>css/dataTables/dataTables.bootstrap.min.css">
     <!--JavaScript-->
     <script type="text/javascript" language="JavaScript" src="<?= $_COOKIE["JIREH_INCLUDE"] ?>js/treeview/js/bootstrap-treeview.js"></script>
-    <script type="text/javascript" language="javascript" src="<?= $_COOKIE["JIREH_INCLUDE"] ?>js/Webjs.js"></script>
+    <script type="text/javascript" language="javascript" src="<?= $_COOKIE["JIREH_INCLUDE"] ?>js/teclaEvent.js"></script>
+    <script type="text/javascript">
+        $(function() {
+            if (typeof $.fn.autocomplete === "function") {
+                $("#search").autocomplete({
+                    source: "search.php",
+                    minLength: 2,
+                    select: function(event, ui) {
+                        event.preventDefault();
+                        $("#codigo").val(ui.item.search);
+                    }
+                });
+            }
+        });
+
+        if (window.shortcut && typeof shortcut.add === "function") {
+            shortcut.add("Ctrl+G", function() {
+                guardar_facturacion();
+            });
+        }
+    </script>
     <script type="text/javascript" src="<?= $_COOKIE["JIREH_INCLUDE"] ?>js/dataTables/jquery.dataTables.min.js"></script>
     <script type="text/javascript" src="<?= $_COOKIE["JIREH_INCLUDE"] ?>js/dataTables/dataTables.bootstrap.min.js"></script>
 
@@ -402,9 +422,20 @@
 
 
         function anadir_ret() {
+            var editId = document.getElementById('ret_edit_idx').value;
+            if (editId !== '') {
+                xajax_agrega_modifica_grid_ret(1, xajax.getFormValues("form1"), editId);
+                document.getElementById('ret_edit_idx').value = '';
+                return;
+            }
+
             xajax_agrega_modifica_grid_ret(0, xajax.getFormValues("form1"));
             replicar_valor();
             anadir_dir();
+        }
+
+        function editar_retencion(id, empresa, sucursal) {
+            xajax_cargar_retencion(id, empresa, sucursal);
         }
 
         function auto_dasi(empresa, event, op) {
@@ -521,6 +552,25 @@
 
 
         function anadir_dir() {
+            var tran = document.getElementById('tran').value;
+            var clpv = document.getElementById('clpv_cod').value;
+            var detalle = document.getElementById('det_dir').value;
+
+            if (clpv === '') {
+                alert('Seleccione un beneficiario para continuar.');
+                return;
+            }
+
+            if (tran === '') {
+                alert('Seleccione un tipo de transacción para continuar.');
+                return;
+            }
+
+            if (detalle === '') {
+                alert('Ingrese un detalle para continuar.');
+                return;
+            }
+
             xajax_agrega_modifica_grid_dir_ori(0, xajax.getFormValues("form1"));
         }
 
@@ -705,7 +755,10 @@
 
 
         function muestra_botones() {
-            document.getElementById("botones").style.display = '';
+            var botones = document.getElementById("botones");
+            if (botones) {
+                botones.style.display = '';
+            }
 
         }
 
@@ -891,6 +944,7 @@
     <body>
         <div class="container-fluid">
             <form id="form1" name="form1" action="javascript:void(null);">
+                <input type="hidden" id="ret_edit_idx" name="ret_edit_idx" value="">
                 <div id="divFormularioCabecera" class="table-responsive"></div>
                 <div class="col-md-8" id="pestanas" style="float:left; width: 100%;">
                     <!-- Nav tabs -->
