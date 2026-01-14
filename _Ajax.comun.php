@@ -33,6 +33,7 @@ $xajax->registerFunction("elimina_detalle_dir");
 $xajax->registerFunction("agrega_modifica_grid_ret");
 $xajax->registerFunction("mostrar_grid_ret");
 $xajax->registerFunction("elimina_detalle_ret");
+$xajax->registerFunction("cargar_retencion");
 
 // DIARIO
 $xajax->registerFunction("agrega_modifica_grid_dia");
