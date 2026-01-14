@@ -422,9 +422,20 @@
 
 
         function anadir_ret() {
+            var editId = document.getElementById('ret_edit_idx').value;
+            if (editId !== '') {
+                xajax_agrega_modifica_grid_ret(1, xajax.getFormValues("form1"), editId);
+                document.getElementById('ret_edit_idx').value = '';
+                return;
+            }
+
             xajax_agrega_modifica_grid_ret(0, xajax.getFormValues("form1"));
             replicar_valor();
             anadir_dir();
+        }
+
+        function editar_retencion(id, empresa, sucursal) {
+            xajax_cargar_retencion(id, empresa, sucursal);
         }
 
         function auto_dasi(empresa, event, op) {
@@ -933,6 +944,7 @@
     <body>
         <div class="container-fluid">
             <form id="form1" name="form1" action="javascript:void(null);">
+                <input type="hidden" id="ret_edit_idx" name="ret_edit_idx" value="">
                 <div id="divFormularioCabecera" class="table-responsive"></div>
                 <div class="col-md-8" id="pestanas" style="float:left; width: 100%;">
                     <!-- Nav tabs -->
