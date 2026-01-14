@@ -546,7 +546,7 @@ function genera_grid($aData = null, $aLabel = null, $sTitulo = 'Reporte', $iAnch
 					$sHtml .= '<td align="right">' . number_format($aData[$i][$aLabel[$j]], 2, ',', '.') . '</td>';
 				else
 					//				$sHtml .= '<td align="left">'.$aData[$i][$aLabel[$j]].'</td>';
-					if ($j == 13 && $sTitulo != 'DIARIO') {
+					if ($j == 13 && $sTitulo == 'DIRECTORIO') {
 						$sHtml .= '<td align="left" style="display:none">' . $aData[$i][$aLabel[$j]] . '</td>';
 					} else {
 						$sHtml .= '<td align="left">' . $aData[$i][$aLabel[$j]] . '</td>';
@@ -3999,7 +3999,7 @@ function cargar_retencion($id, $idempresa, $idsucursal)
 	$oReturn->assign("tran_ret", "value", $row['Tipo Ret'] ?? '');
 	$oReturn->assign("serie_ret_sj", "value", $row['Serie'] ?? '');
 	$oReturn->assign("numero_autorizacion", "value", $row['No. Autorizacion'] ?? '');
-	$oReturn->assign("retencion_btn_label", "innerHTML", "Actualizar");
+	$oReturn->script("abrir_modal_retencion();");
 
 	return $oReturn;
 }
@@ -4017,7 +4017,7 @@ function elimina_detalle_ret($id = null, $idempresa, $idsucursal, $id_di)
 		'Porc(%)', 			'Base Impo',        	'Valor', 				'N.- Retencion', 		'Detalle',
 		'Origen',
 		'Cotizacion',       'Debito Moneda Local', 	'Credito Moneda Local', 'Debito Moneda Ext', 	'Credito Moneda Ext',
-		'Modificar', 		'Eliminar',				'DI'
+		'Modificar', 		'Eliminar',				'DI', 'Tipo Ret', 'Serie', 'No. Autorizacion'
 	);
 
 	$aDataGrid = $_SESSION['aDataGirdRet'];
