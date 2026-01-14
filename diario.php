@@ -15,8 +15,8 @@
     <link rel="stylesheet" href="<?= $_COOKIE["JIREH_INCLUDE"] ?>css/dataTables/dataTables.bootstrap.min.css">
     <!--JavaScript-->
     <script type="text/javascript" language="JavaScript" src="<?= $_COOKIE["JIREH_INCLUDE"] ?>js/treeview/js/bootstrap-treeview.js"></script>
-    <script type="text/javascript" language="javascript" src="<?= $_COOKIE["JIREH_INCLUDE"] ?>js/teclaEvent.js"></script>
-    <script type="text/javascript" language="javascript" src="<?= $_COOKIE["JIREH_INCLUDE"] ?>js/Webjs.js"></script>
+    <script type="text/javascript" language="javascript" src="js/teclaEvent.js"></script>
+    <script type="text/javascript" language="javascript" src="js/Webjs.js"></script>
     <script type="text/javascript" src="<?= $_COOKIE["JIREH_INCLUDE"] ?>js/dataTables/jquery.dataTables.min.js"></script>
     <script type="text/javascript" src="<?= $_COOKIE["JIREH_INCLUDE"] ?>js/dataTables/dataTables.bootstrap.min.js"></script>
 
