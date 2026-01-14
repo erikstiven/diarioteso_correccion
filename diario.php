@@ -443,7 +443,7 @@
                 return;
             }
 
-            if (tranRet === '') {
+            if (tranRet === '' || tranRet === '0') {
                 alert('Seleccione un tipo de transacción para continuar.');
                 return;
             }

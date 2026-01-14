@@ -454,7 +454,7 @@ function genera_grid($aData = null, $aLabel = null, $sTitulo = 'Reporte', $iAnch
 		$arrayaDataGridVisible[13] = 'S';		//CREDITO LOCAL
 		$arrayaDataGridVisible[14] = 'S';		//DEBITO EXT
 		$arrayaDataGridVisible[15] = 'S';		//CREDITO EXT
-		$arrayaDataGridVisible[16] = 'N';		// MODIFICR
+		$arrayaDataGridVisible[16] = 'S';		// MODIFICR
 		$arrayaDataGridVisible[17] = 'S';		//ELIMINAR
 		$arrayaDataGridVisible[18] = 'S';		//DI
 		$arrayaDataGridVisible[19] = 'N';		//TIPO RET
