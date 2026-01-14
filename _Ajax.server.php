@@ -3882,6 +3882,8 @@ function agrega_modifica_grid_ret($nTipo = 0, $aForm = '', $id = '')
 	$oReturn->assign("valor_retenido", "value", "");
 	$oReturn->assign("ret_num", "value", "");
 	$oReturn->assign("origen", "value", date('Y/m/d'));
+	$oReturn->assign("ret_edit_idx", "value", "");
+	$oReturn->assign("retencion_btn_label", "innerHTML", "Agregar");
 
 	// TOTAL DIARIO
 	$oReturn->script("total_diario();");
