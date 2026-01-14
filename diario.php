@@ -744,7 +744,10 @@
 
 
         function muestra_botones() {
-            document.getElementById("botones").style.display = '';
+            var botones = document.getElementById("botones");
+            if (botones) {
+                botones.style.display = '';
+            }
 
         }
 
