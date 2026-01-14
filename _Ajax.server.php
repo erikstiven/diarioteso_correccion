@@ -457,6 +457,9 @@ function genera_grid($aData = null, $aLabel = null, $sTitulo = 'Reporte', $iAnch
 		$arrayaDataGridVisible[16] = 'N';		// MODIFICR
 		$arrayaDataGridVisible[17] = 'S';		//ELIMINAR
 		$arrayaDataGridVisible[18] = 'S';		//DI
+		$arrayaDataGridVisible[19] = 'N';		//TIPO RET
+		$arrayaDataGridVisible[20] = 'N';		//SERIE
+		$arrayaDataGridVisible[21] = 'N';		//NO. AUTORIZACION
 
 		$arrayaDataGridTipo[0] = 'N';
 		$arrayaDataGridTipo[1] = 'T';
@@ -477,6 +480,9 @@ function genera_grid($aData = null, $aLabel = null, $sTitulo = 'Reporte', $iAnch
 		$arrayaDataGridTipo[16] = 'I';
 		$arrayaDataGridTipo[17] = 'I';
 		$arrayaDataGridTipo[18] = 'N';
+		$arrayaDataGridTipo[19] = 'T';
+		$arrayaDataGridTipo[20] = 'T';
+		$arrayaDataGridTipo[21] = 'T';
 	}
 	
 
@@ -1148,7 +1154,7 @@ function genera_formulario($sAccion = 'nuevo', $aForm = '', $idModulo = '197', $
 							<td align="center">
 								<div class="btn btn-success btn-sm" onclick="anadir_ret();">
 									<span class="glyphicon glyphicon-plus"></span>
-									Agregar
+									<span id="retencion_btn_label">Agregar</span>
 								</div>
 							</td>
 						</tr>';
@@ -3661,7 +3667,7 @@ function agrega_modifica_grid_ret($nTipo = 0, $aForm = '', $id = '')
 	$aLabelGrid = array(
 		'Fila', 			'Cta Ret', 				'Cliente', 			'Factura', 			'Ret Cliente', 				'Porc(%)', 				'Base Impo',
 		'Valor', 			'N.- Retencion', 		'Detalle', 	 		'Origen', 			'Cotizacion',  				'Debito Moneda Local', 'Credito Monda Local',
-		'Debito Moneda Ext', 'Credito Moneda Ext', 	'Modificar', 		'Eliminar',			'DI'
+		'Debito Moneda Ext', 'Credito Moneda Ext', 	'Modificar', 		'Eliminar',			'DI', 'Tipo Ret', 'Serie', 'No. Autorizacion'
 	);
 
 	$aLabelDiar = array(
@@ -3736,8 +3742,15 @@ function agrega_modifica_grid_ret($nTipo = 0, $aForm = '', $id = '')
 	}
 	$cuen_nom = consulta_string_func($sql, 'cuen_nom_cuen', $oIfx, '');
 
+	$labelModificar = 'Modificar';
+	$labelEliminar = 'Eliminar';
+	$labelDi = 'DI';
+	$labelTipoRet = 'Tipo Ret';
+	$labelSerie = 'Serie';
+	$labelAutorizacion = 'No. Autorizacion';
+
 	$cont = ($nTipo == 0) ? count($aDataGrid) : (int)$id;
-	$contd = ($nTipo == 0) ? count($aDataDiar) : (int)($aDataGrid[$cont][$aLabelGrid[18]] ?? 0);
+	$contd = ($nTipo == 0) ? count($aDataDiar) : (int)($aDataGrid[$cont][$labelDi] ?? 0);
 
 	if (!isset($aDataDiar[$contd])) {
 		$contd = count($aDataDiar);
@@ -3783,7 +3796,7 @@ function agrega_modifica_grid_ret($nTipo = 0, $aForm = '', $id = '')
 		$aDataGrid[$cont][$aLabelGrid[15]] = 0;
 	}
 
-	$aDataGrid[$cont][$aLabelGrid[16]] = '<div align="center">
+	$aDataGrid[$cont][$labelModificar] = '<div align="center">
 													<img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/pencil.png"
 													title = "Presione aqui para Modificar"
 													style="cursor: hand !important; cursor: pointer !important;"
@@ -3791,7 +3804,7 @@ function agrega_modifica_grid_ret($nTipo = 0, $aForm = '', $id = '')
 													alt="Modificar"
 													align="bottom" />
 												</div>';
-	$aDataGrid[$cont][$aLabelGrid[17]] = '<div align="center">
+	$aDataGrid[$cont][$labelEliminar] = '<div align="center">
 													<img src="' . $_COOKIE['JIREH_IMAGENES'] . 'iconos/delete_1.png"
 													title = "Presione aqui para Eliminar"
 													style="cursor: hand !important; cursor: pointer !important;"
@@ -3799,7 +3812,10 @@ function agrega_modifica_grid_ret($nTipo = 0, $aForm = '', $id = '')
 													alt="Eliminar"
 													align="bottom" />
 												</div>';
-	$aDataGrid[$cont][$aLabelGrid[18]] = $contd;
+	$aDataGrid[$cont][$labelDi] = $contd;
+	$aDataGrid[$cont][$labelTipoRet] = $aForm["tran_ret"];
+	$aDataGrid[$cont][$labelSerie] = $aForm["serie_ret_sj"];
+	$aDataGrid[$cont][$labelAutorizacion] = $aForm["numero_autorizacion"];
 
 
 	// DIARIO
@@ -3889,7 +3905,7 @@ function mostrar_grid_ret($idempresa, $idsucursal)
 	$aLabelGrid = array(
 		'Fila', 			'Cta Ret', 				'Cliente', 			'Factura', 			'Ret Cliente', 				'Porc(%)', 				'Base Impo',
 		'Valor', 			'N.- Retencion', 		'Detalle', 	 		'Origen', 			'Cotizacion',  				'Debito Moneda Local', 'Credito Monda Local',
-		'Debito Moneda Ext', 'Credito Moneda Ext', 	'Modificar', 		'Eliminar',			'DI'
+		'Debito Moneda Ext', 'Credito Moneda Ext', 	'Modificar', 		'Eliminar',			'DI', 'Tipo Ret', 'Serie', 'No. Autorizacion'
 	);
 
 
@@ -3964,7 +3980,7 @@ function cargar_retencion($id, $idempresa, $idsucursal)
 	$aLabelGrid = array(
 		'Fila', 			'Cta Ret', 				'Cliente', 			'Factura', 			'Ret Cliente', 				'Porc(%)', 				'Base Impo',
 		'Valor', 			'N.- Retencion', 		'Detalle', 	 		'Origen', 			'Cotizacion',  				'Debito Moneda Local', 'Credito Monda Local',
-		'Debito Moneda Ext', 'Credito Moneda Ext', 	'Modificar', 		'Eliminar',			'DI'
+		'Debito Moneda Ext', 'Credito Moneda Ext', 	'Modificar', 		'Eliminar',			'DI', 'Tipo Ret', 'Serie', 'No. Autorizacion'
 	);
 
 	$row = $aDataGrid[$id];
@@ -3978,6 +3994,10 @@ function cargar_retencion($id, $idempresa, $idsucursal)
 	$oReturn->assign("ret_det", "value", $row[$aLabelGrid[9]] ?? '');
 	$oReturn->assign("origen", "value", $row[$aLabelGrid[10]] ?? '');
 	$oReturn->assign("ret_edit_idx", "value", $id);
+	$oReturn->assign("tran_ret", "value", $row['Tipo Ret'] ?? '');
+	$oReturn->assign("serie_ret_sj", "value", $row['Serie'] ?? '');
+	$oReturn->assign("numero_autorizacion", "value", $row['No. Autorizacion'] ?? '');
+	$oReturn->assign("retencion_btn_label", "innerHTML", "Actualizar");
 
 	return $oReturn;
 }

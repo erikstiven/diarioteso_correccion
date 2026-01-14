@@ -457,6 +457,10 @@
             if (editId !== '') {
                 xajax_agrega_modifica_grid_ret(1, xajax.getFormValues("form1"), editId);
                 document.getElementById('ret_edit_idx').value = '';
+                var btnLabel = document.getElementById('retencion_btn_label');
+                if (btnLabel) {
+                    btnLabel.textContent = 'Agregar';
+                }
                 return;
             }
 
