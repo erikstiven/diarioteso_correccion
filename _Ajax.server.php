@@ -534,25 +534,24 @@ function genera_grid($aData = null, $aLabel = null, $sTitulo = 'Reporte', $iAnch
 		$sHtml .= '</tr>';
 
 
-		for ($i = 0; $i < $iData; $i++) {
-			if ($sClass == 'off')
-				$sClass = 'on';
-			else
-				$sClass = 'off';
-
-			$sHtml .= '<tr>';
-			for ($j = 0; $j < $iLabel; $j++)
-				if (is_float($aData[$i][$aLabel[$j]]))
-					$sHtml .= '<td align="right">' . number_format($aData[$i][$aLabel[$j]], 2, ',', '.') . '</td>';
+			for ($i = 0; $i < $iData; $i++) {
+				if ($sClass == 'off')
+					$sClass = 'on';
 				else
-					//				$sHtml .= '<td align="left">'.$aData[$i][$aLabel[$j]].'</td>';
-					if ($j == 13 && $sTitulo == 'DIRECTORIO') {
-						$sHtml .= '<td align="left" style="display:none">' . $aData[$i][$aLabel[$j]] . '</td>';
+					$sClass = 'off';
+
+				$sHtml .= '<tr>';
+				for ($j = 0; $j < $iLabel; $j++) {
+					$aDataVisible = $arrayaDataGridVisible[$j] ?? 'S';
+					$displayStyle = ($aDataVisible === 'N') ? ' style="display:none"' : '';
+					if (is_float($aData[$i][$aLabel[$j]])) {
+						$sHtml .= '<td align="right"' . $displayStyle . '>' . number_format($aData[$i][$aLabel[$j]], 2, ',', '.') . '</td>';
 					} else {
-						$sHtml .= '<td align="left">' . $aData[$i][$aLabel[$j]] . '</td>';
+						$sHtml .= '<td align="left"' . $displayStyle . '>' . $aData[$i][$aLabel[$j]] . '</td>';
 					}
-			$sHtml .= '</tr>';
-		}
+				}
+				$sHtml .= '</tr>';
+			}
 
 		//Totales
 		$sHtml .= '<tr class="danger">';
