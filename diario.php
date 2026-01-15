@@ -788,7 +788,7 @@
             $("#mostrarmodal").modal("hide");
         }
 
-        function abrir_modal_retencion() {
+        function abrir_modal_retencion(editId) {
             var source = document.getElementById('tran_ret');
             var target = document.getElementById('ret_modal_tran_ret');
             if (source && target) {
@@ -809,6 +809,7 @@
             document.getElementById('ret_modal_autorizacion').value = autorizacion ? autorizacion.value : '';
             document.getElementById('ret_modal_valor').value = valor ? valor.value : '';
             document.getElementById('ret_modal_detalle').value = detalle ? detalle.value : '';
+            document.getElementById('ret_modal_edit_idx').value = editId || '';
 
             $("#modalRetencionEdit").modal("show");
         }
@@ -826,7 +827,7 @@
             document.getElementById('valor_retenido').value = document.getElementById('ret_modal_valor').value;
             document.getElementById('ret_det').value = document.getElementById('ret_modal_detalle').value;
 
-            var editId = document.getElementById('ret_edit_idx').value;
+            var editId = document.getElementById('ret_modal_edit_idx').value || document.getElementById('ret_edit_idx').value;
             if (editId === '') {
                 alert('Seleccione un registro para actualizar.');
                 return;
@@ -841,6 +842,10 @@
             var idxField = document.getElementById('ret_edit_idx');
             if (idxField) {
                 idxField.value = '';
+            }
+            var modalIdxField = document.getElementById('ret_modal_edit_idx');
+            if (modalIdxField) {
+                modalIdxField.value = '';
             }
         }
 
@@ -1072,6 +1077,7 @@
                                 <h4 class="modal-title" id="modalRetencionEditLabel">Editar retención</h4>
                             </div>
                             <div class="modal-body">
+                                <input type="hidden" id="ret_modal_edit_idx" value="">
                                 <div class="form-group">
                                     <label for="ret_modal_tran_ret">Tipo Ret <span class="text-danger">*</span></label>
                                     <select id="ret_modal_tran_ret" class="form-control"></select>

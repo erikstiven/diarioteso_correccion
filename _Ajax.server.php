@@ -3998,7 +3998,7 @@ function cargar_retencion($id, $idempresa, $idsucursal)
 	$oReturn->assign("tran_ret", "value", $row['Tipo Ret'] ?? '');
 	$oReturn->assign("serie_ret_sj", "value", $row['Serie'] ?? '');
 	$oReturn->assign("numero_autorizacion", "value", $row['No. Autorizacion'] ?? '');
-	$oReturn->script("abrir_modal_retencion();");
+	$oReturn->script("abrir_modal_retencion(" . (int)$id . ");");
 
 	return $oReturn;
 }
