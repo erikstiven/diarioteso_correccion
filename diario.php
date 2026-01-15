@@ -833,17 +833,16 @@
             }
 
             xajax_agrega_modifica_grid_ret(1, xajax.getFormValues("form1"), editId);
+            limpiar_modal_retencion();
             $("#modalRetencionEdit").modal("hide");
         }
 
-        $(function() {
-            $('#modalRetencionEdit').on('hidden.bs.modal', function() {
-                var idxField = document.getElementById('ret_edit_idx');
-                if (idxField) {
-                    idxField.value = '';
-                }
-            });
-        });
+        function limpiar_modal_retencion() {
+            var idxField = document.getElementById('ret_edit_idx');
+            if (idxField) {
+                idxField.value = '';
+            }
+        }
 
 
         function muestra_botones() {
@@ -1096,7 +1095,7 @@
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-primary" onclick="actualizar_retencion();">Actualizar</button>
-                                <button type="button" class="btn btn-danger" data-dismiss="modal">Cerrar</button>
+                                <button type="button" class="btn btn-danger" data-dismiss="modal" onclick="limpiar_modal_retencion();">Cerrar</button>
                             </div>
                         </div>
                     </div>
