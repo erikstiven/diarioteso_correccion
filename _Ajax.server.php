@@ -534,25 +534,24 @@ function genera_grid($aData = null, $aLabel = null, $sTitulo = 'Reporte', $iAnch
 		$sHtml .= '</tr>';
 
 
-		for ($i = 0; $i < $iData; $i++) {
-			if ($sClass == 'off')
-				$sClass = 'on';
-			else
-				$sClass = 'off';
-
-			$sHtml .= '<tr>';
-			for ($j = 0; $j < $iLabel; $j++)
-				if (is_float($aData[$i][$aLabel[$j]]))
-					$sHtml .= '<td align="right">' . number_format($aData[$i][$aLabel[$j]], 2, ',', '.') . '</td>';
+			for ($i = 0; $i < $iData; $i++) {
+				if ($sClass == 'off')
+					$sClass = 'on';
 				else
-					//				$sHtml .= '<td align="left">'.$aData[$i][$aLabel[$j]].'</td>';
-					if ($j == 13 && $sTitulo != 'DIARIO') {
-						$sHtml .= '<td align="left" style="display:none">' . $aData[$i][$aLabel[$j]] . '</td>';
+					$sClass = 'off';
+
+				$sHtml .= '<tr>';
+				for ($j = 0; $j < $iLabel; $j++) {
+					$aDataVisible = $arrayaDataGridVisible[$j] ?? 'S';
+					$displayStyle = ($aDataVisible === 'N') ? ' style="display:none"' : '';
+					if (is_float($aData[$i][$aLabel[$j]])) {
+						$sHtml .= '<td align="right"' . $displayStyle . '>' . number_format($aData[$i][$aLabel[$j]], 2, ',', '.') . '</td>';
 					} else {
-						$sHtml .= '<td align="left">' . $aData[$i][$aLabel[$j]] . '</td>';
+						$sHtml .= '<td align="left"' . $displayStyle . '>' . $aData[$i][$aLabel[$j]] . '</td>';
 					}
-			$sHtml .= '</tr>';
-		}
+				}
+				$sHtml .= '</tr>';
+			}
 
 		//Totales
 		$sHtml .= '<tr class="danger">';
@@ -3999,7 +3998,7 @@ function cargar_retencion($id, $idempresa, $idsucursal)
 	$oReturn->assign("tran_ret", "value", $row['Tipo Ret'] ?? '');
 	$oReturn->assign("serie_ret_sj", "value", $row['Serie'] ?? '');
 	$oReturn->assign("numero_autorizacion", "value", $row['No. Autorizacion'] ?? '');
-	$oReturn->assign("retencion_btn_label", "innerHTML", "Actualizar");
+	$oReturn->script("abrir_modal_retencion(" . (int)$id . ");");
 
 	return $oReturn;
 }
@@ -4017,7 +4016,7 @@ function elimina_detalle_ret($id = null, $idempresa, $idsucursal, $id_di)
 		'Porc(%)', 			'Base Impo',        	'Valor', 				'N.- Retencion', 		'Detalle',
 		'Origen',
 		'Cotizacion',       'Debito Moneda Local', 	'Credito Moneda Local', 'Debito Moneda Ext', 	'Credito Moneda Ext',
-		'Modificar', 		'Eliminar',				'DI'
+		'Modificar', 		'Eliminar',				'DI', 'Tipo Ret', 'Serie', 'No. Autorizacion'
 	);
 
 	$aDataGrid = $_SESSION['aDataGirdRet'];

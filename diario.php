@@ -788,6 +788,70 @@
             $("#mostrarmodal").modal("hide");
         }
 
+        function abrir_modal_retencion(editId) {
+            var source = document.getElementById('tran_ret');
+            var target = document.getElementById('ret_modal_tran_ret');
+            if (source && target) {
+                target.innerHTML = '';
+                for (var i = 0; i < source.options.length; i++) {
+                    var opt = source.options[i];
+                    target.add(new Option(opt.text, opt.value));
+                }
+                target.value = source.value;
+            }
+
+            var serie = document.getElementById('serie_ret_sj');
+            var autorizacion = document.getElementById('numero_autorizacion');
+            var valor = document.getElementById('valor_retenido');
+            var detalle = document.getElementById('ret_det');
+
+            document.getElementById('ret_modal_serie').value = serie ? serie.value : '';
+            document.getElementById('ret_modal_autorizacion').value = autorizacion ? autorizacion.value : '';
+            document.getElementById('ret_modal_valor').value = valor ? valor.value : '';
+            document.getElementById('ret_modal_detalle').value = detalle ? detalle.value : '';
+            document.getElementById('ret_modal_edit_idx').value = (editId === undefined || editId === null) ? '' : editId;
+
+            $("#modalRetencionEdit").modal("show");
+        }
+
+        function actualizar_retencion() {
+            var tipoRet = document.getElementById('ret_modal_tran_ret').value;
+            if (tipoRet === '' || tipoRet === '0') {
+                alert('Seleccione un tipo de retención para continuar.');
+                return;
+            }
+
+            document.getElementById('tran_ret').value = tipoRet;
+            document.getElementById('serie_ret_sj').value = document.getElementById('ret_modal_serie').value;
+            document.getElementById('numero_autorizacion').value = document.getElementById('ret_modal_autorizacion').value;
+            document.getElementById('valor_retenido').value = document.getElementById('ret_modal_valor').value;
+            document.getElementById('ret_det').value = document.getElementById('ret_modal_detalle').value;
+
+            var editId = document.getElementById('ret_modal_edit_idx').value;
+            if (editId === '') {
+                editId = document.getElementById('ret_edit_idx').value;
+            }
+            if (editId === '' || editId === undefined || editId === null) {
+                alert('Seleccione un registro para actualizar.');
+                return;
+            }
+
+            xajax_agrega_modifica_grid_ret(1, xajax.getFormValues("form1"), editId);
+            limpiar_modal_retencion();
+            $("#modalRetencionEdit").modal("hide");
+        }
+
+        function limpiar_modal_retencion() {
+            var idxField = document.getElementById('ret_edit_idx');
+            if (idxField) {
+                idxField.value = '';
+            }
+            var modalIdxField = document.getElementById('ret_modal_edit_idx');
+            if (modalIdxField) {
+                modalIdxField.value = '';
+            }
+        }
+
 
         function muestra_botones() {
             var botones = document.getElementById("botones");
@@ -1008,6 +1072,43 @@
                     </div>
                 </div>
                 <div id="miModal_Diario" class="col-md-12"></div>
+                <div class="modal fade" id="modalRetencionEdit" tabindex="-1" role="dialog" aria-labelledby="modalRetencionEditLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg" style="width: 500px;">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                <h4 class="modal-title" id="modalRetencionEditLabel">Editar retención</h4>
+                            </div>
+                            <div class="modal-body">
+                                <input type="hidden" id="ret_modal_edit_idx" value="">
+                                <div class="form-group">
+                                    <label for="ret_modal_tran_ret">Tipo Ret <span class="text-danger">*</span></label>
+                                    <select id="ret_modal_tran_ret" class="form-control"></select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="ret_modal_serie">Serie</label>
+                                    <input type="text" id="ret_modal_serie" class="form-control" maxlength="6">
+                                </div>
+                                <div class="form-group">
+                                    <label for="ret_modal_autorizacion">No. Autorización</label>
+                                    <input type="text" id="ret_modal_autorizacion" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label for="ret_modal_valor">Valor</label>
+                                    <input type="text" id="ret_modal_valor" class="form-control" onkeyup="mascara(this,cpf)">
+                                </div>
+                                <div class="form-group">
+                                    <label for="ret_modal_detalle">Detalle</label>
+                                    <input type="text" id="ret_modal_detalle" class="form-control" onkeyup="this.value=this.value.toUpperCase();">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-primary" onclick="actualizar_retencion();">Actualizar</button>
+                                <button type="button" class="btn btn-danger" data-dismiss="modal" onclick="limpiar_modal_retencion();">Cerrar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div style="width: 100%;">
                     <div id="miModalDistri"></div>
                 </div>
