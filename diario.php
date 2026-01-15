@@ -809,7 +809,7 @@
             document.getElementById('ret_modal_autorizacion').value = autorizacion ? autorizacion.value : '';
             document.getElementById('ret_modal_valor').value = valor ? valor.value : '';
             document.getElementById('ret_modal_detalle').value = detalle ? detalle.value : '';
-            document.getElementById('ret_modal_edit_idx').value = editId || '';
+            document.getElementById('ret_modal_edit_idx').value = (editId === undefined || editId === null) ? '' : editId;
 
             $("#modalRetencionEdit").modal("show");
         }
@@ -827,8 +827,11 @@
             document.getElementById('valor_retenido').value = document.getElementById('ret_modal_valor').value;
             document.getElementById('ret_det').value = document.getElementById('ret_modal_detalle').value;
 
-            var editId = document.getElementById('ret_modal_edit_idx').value || document.getElementById('ret_edit_idx').value;
+            var editId = document.getElementById('ret_modal_edit_idx').value;
             if (editId === '') {
+                editId = document.getElementById('ret_edit_idx').value;
+            }
+            if (editId === '' || editId === undefined || editId === null) {
                 alert('Seleccione un registro para actualizar.');
                 return;
             }
